@@ -2,8 +2,17 @@ import { useState, useEffect } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import ArticleCard from '../../components/ArticleCard';
-import { categories, api } from '../../mock/data';
+import { api } from '../../services/api';
 import './BlogList.css';
+
+// 分类数据（静态，不需要从后端获取）
+const categories = [
+  { id: 'all', name: '全部', color: '#00F5D4' },
+  { id: 'frontend', name: '前端', color: '#00F5D4' },
+  { id: 'backend', name: '后端', color: '#A78BFA' },
+  { id: 'tools', name: '工具', color: '#F59E0B' },
+  { id: 'thoughts', name: '随想', color: '#FF6B6B' }
+];
 
 export default function BlogList() {
   const [articles, setArticles] = useState([]);

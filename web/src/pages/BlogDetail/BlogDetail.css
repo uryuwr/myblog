@@ -24,6 +24,13 @@
   text-align: center;
 }
 
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-9);
+}
+
 .back-btn {
   display: inline-flex;
   align-items: center;
@@ -36,13 +43,32 @@
   color: var(--text-muted);
   background: transparent;
   cursor: pointer;
-  margin-bottom: var(--space-9);
   transition: all var(--transition-fast);
 }
 
 .back-btn:hover {
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
+}
+
+.delete-article-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-md);
+  padding: var(--padding-btn-md);
+  border: 1px solid var(--accent-red, #FF6B6B);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--accent-red, #FF6B6B);
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.delete-article-btn:hover {
+  background: var(--accent-red, #FF6B6B);
+  color: white;
 }
 
 .article-tags {
@@ -332,6 +358,10 @@
   --avatar-color: var(--accent-purple);
 }
 
+.comment-avatar.logged-in {
+  --avatar-color: var(--accent-cyan);
+}
+
 .comment-input-wrap {
   flex: 1;
   display: flex;
@@ -425,6 +455,33 @@
   font-size: var(--text-base);
   line-height: var(--leading-relaxed);
   color: var(--text-secondary);
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-lg);
+}
+
+.delete-comment-btn {
+  margin-left: auto;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+
+.comment-item:hover .delete-comment-btn {
+  opacity: 1;
+}
+
+.delete-comment-btn:hover {
+  background: var(--accent-red, #FF6B6B);
+  color: white;
 }
 
 /* 响应式 */

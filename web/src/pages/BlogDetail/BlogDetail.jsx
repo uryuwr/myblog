@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Eye, Heart, Calendar, Share2, Bookmark, 
-  Copy, Check
+  Copy, Check, Trash2
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
-import { userProfile, api } from '../../mock/data';
+import { api } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import './BlogDetail.css';
+
+// 用户信息（静态数据）
+const userProfile = {
+  name: '陈煌',
+  title: '后端开发工程师',
+  avatar: '陈',
+};
 
 export default function BlogDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [article, setArticle] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -33,9 +43,36 @@ export default function BlogDetail() {
     e.preventDefault();
     if (!newComment.trim()) return;
 
-    const comment = await api.addComment(id, newComment);
+    // 使用登录用户的邮箱作为作者名，未登录则显示"游客"
+    const authorName = user?.email || '游客';
+    const comment = await api.addComment(id, newComment, authorName);
     setComments([comment, ...comments]);
     setNewComment('');
+  };
+
+  // 删除文章
+  const handleDeleteArticle = async () => {
+    if (!window.confirm('确定要删除这篇文章吗？此操作不可撤销。')) return;
+    
+    try {
+      await api.deleteArticle(id);
+      alert('文章已删除');
+      navigate('/blog');
+    } catch (error) {
+      alert('删除失败：' + error.message);
+    }
+  };
+
+  // 删除评论
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('确定要删除这条评论吗？')) return;
+    
+    try {
+      await api.deleteComment(commentId);
+      setComments(comments.filter(c => c.id !== commentId));
+    } catch (error) {
+      alert('删除失败：' + error.message);
+    }
   };
 
   const handleCopyCode = (code) => {
@@ -143,10 +180,16 @@ export default function BlogDetail() {
       <main className="detail-main">
         {/* Article Header */}
         <header className="article-header">
-          <Link to="/blog" className="back-btn">
-            <ArrowLeft size={18} />
-            返回列表
-          </Link>
+          <div className="header-actions">
+            <Link to="/blog" className="back-btn">
+              <ArrowLeft size={18} />
+              返回列表
+            </Link>
+            <button className="delete-article-btn" onClick={handleDeleteArticle}>
+              <Trash2 size={16} />
+              删除文章
+            </button>
+          </div>
 
           <div className="article-tags">
             {article.tags?.map(tag => (
@@ -224,11 +267,13 @@ export default function BlogDetail() {
           <h3 className="comments-title">💬 评论 ({comments.length})</h3>
 
           <form className="comment-form" onSubmit={handleSubmitComment}>
-            <div className="comment-avatar guest">游</div>
+            <div className={`comment-avatar ${user ? 'logged-in' : 'guest'}`}>
+              {user ? user.email.charAt(0).toUpperCase() : '游'}
+            </div>
             <div className="comment-input-wrap">
               <textarea
                 className="comment-input"
-                placeholder="写下你的评论..."
+                placeholder={user ? `以 ${user.email} 身份评论...` : "写下你的评论..."}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 rows={3}
@@ -252,6 +297,13 @@ export default function BlogDetail() {
                   <div className="comment-header">
                     <span className="comment-author">{comment.author}</span>
                     <span className="comment-time">{comment.createdAt}</span>
+                    <button 
+                      className="delete-comment-btn"
+                      onClick={() => handleDeleteComment(comment.id)}
+                      title="删除评论"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                   <p className="comment-text">{comment.content}</p>
                 </div>

@@ -1,11 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Github, ArrowRight, Sparkles } from 'lucide-react';
+import { BookOpen, Github, ArrowRight, Sparkles, Cat } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import ArticleCard from '../../components/ArticleCard';
-import Terminal from '../../components/Terminal';
-import { userProfile, api } from '../../mock/data';
+import { api } from '../../services/api';
 import './Home.css';
+
+// 用户信息（静态数据）
+const userProfile = {
+  name: '陈煌',
+  title: '后端开发工程师',
+  avatar: '陈',
+  bio: '热爱编程，专注于 服务端开发，喜欢探索新技术。在这里分享我的技术心得与成长经历，希望能帮助到同样热爱技术的你。',
+  skills: ['Java', 'Spring Boot', 'vibe coding', 'kafka'],
+  social: {
+    github: 'https://github.com/uryuwr',
+    email: '289561901@qq.com'
+  }
+};
 
 export default function Home() {
   const [featuredArticles, setFeaturedArticles] = useState([]);
@@ -61,8 +73,23 @@ export default function Home() {
             </div>
           </div>
 
+          {/* 右侧视觉区域 - 皮维斯入口卡片 */}
           <div className="hero-visual">
-            <Terminal />
+            <Link to="/piweisi" className="piweisi-card">
+              <div className="piweisi-card-glow"></div>
+              <div className="piweisi-card-content">
+                <div className="piweisi-icon">
+                  <Cat size={48} />
+                </div>
+                <h3 className="piweisi-card-title">皮维斯</h3>
+                <p className="piweisi-card-desc">
+                  我的智能助手，随时为你服务
+                </p>
+                <span className="piweisi-card-link">
+                  开始对话 <ArrowRight size={16} />
+                </span>
+              </div>
+            </Link>
           </div>
         </section>
 

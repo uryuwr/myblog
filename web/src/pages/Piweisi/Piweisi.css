@@ -1,0 +1,403 @@
+/* ============================================
+   皮维斯页面样式 - 智能助手终端
+   ============================================ */
+
+.piweisi-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-dark);
+}
+
+.piweisi-main {
+  flex: 1;
+  padding: 48px 56px;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  width: 100%;
+}
+
+.piweisi-content {
+  display: flex;
+  gap: 48px;
+  align-items: flex-start;
+}
+
+/* ============================================
+   左侧 - 虚拟形象面板 (桌面端)
+   ============================================ */
+.avatar-panel {
+  width: 380px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 32px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--accent-cyan-30);
+}
+
+.avatar-glow {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: var(--accent-cyan-10);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.avatar-glow::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-cyan-40), var(--accent-purple-20));
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.avatar-frame {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 2px solid var(--accent-cyan-50);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.avatar-frame.working {
+  border-color: var(--accent-red-50);
+  animation: pulse-working 2s ease-in-out infinite;
+}
+
+.avatar-frame.working + .avatar-glow::before {
+  opacity: 1;
+}
+
+@keyframes pulse-working {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--accent-red-40);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--accent-red-50);
+  }
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 占位符 - 当图片不存在时显示 */
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+}
+
+.avatar-emoji {
+  font-size: 80px;
+  line-height: 1;
+}
+
+.mobile-avatar-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* 状态行 */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-dot.working {
+  background: var(--accent-red);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-text {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--accent-cyan);
+}
+
+.status-dot.working + .status-text {
+  color: var(--accent-red);
+}
+
+/* 名称和描述 */
+.cat-name {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.cat-subtitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  color: var(--accent-purple);
+  margin: 0;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border-default);
+}
+
+.cat-description {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* 心情/状态标签 */
+.mood-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mood-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+}
+
+.mood-badge {
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--accent-cyan-20);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent-cyan);
+}
+
+.mood-badge.working {
+  background: var(--accent-red-20);
+  color: var(--accent-red);
+}
+
+/* ============================================
+   右侧 - 终端区域
+   ============================================ */
+.terminal-section {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.terminal-section .terminal {
+  max-width: none;
+  height: 600px;
+}
+
+/* ============================================
+   移动端 - 浮动小头像
+   ============================================ */
+.mobile-avatar {
+  position: absolute;
+  top: 52px; /* 终端标题栏下方 */
+  right: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 2px solid var(--accent-cyan-50);
+  overflow: hidden;
+  z-index: 20;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.mobile-avatar.working {
+  border-color: var(--accent-red-50);
+  animation: mobile-pulse 2s ease-in-out infinite;
+}
+
+@keyframes mobile-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px var(--accent-red-40);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 20px var(--accent-red-50);
+  }
+}
+
+.mobile-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobile-status-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  border: 2px solid var(--bg-surface);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.mobile-status-dot.working {
+  background: var(--accent-red);
+}
+
+/* ============================================
+   页脚
+   ============================================ */
+.piweisi-footer {
+  padding: 16px 56px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+}
+
+/* ============================================
+   响应式适配 - 平板
+   ============================================ */
+@media (max-width: 1200px) {
+  .piweisi-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .avatar-panel {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .terminal-section {
+    width: 100%;
+  }
+
+  .terminal-section .terminal {
+    height: 500px;
+  }
+}
+
+/* ============================================
+   响应式适配 - 移动端
+   ============================================ */
+@media (max-width: 768px) {
+  .piweisi-page {
+    /* 防止页面整体滚动 */
+    overflow: hidden;
+    height: 100vh;
+    height: 100dvh; /* 动态视口高度 */
+  }
+
+  .piweisi-main {
+    padding: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .piweisi-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* 移动端隐藏左侧面板 */
+  .avatar-panel {
+    display: none;
+  }
+
+  /* 终端区域全屏 */
+  .terminal-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .terminal-section .terminal {
+    flex: 1;
+    height: auto;
+    max-width: none;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    /* 允许终端内部滚动，阻止滚动穿透到外层 */
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* 移动端页脚隐藏 */
+  .piweisi-footer {
+    display: none;
+  }
+
+  /* 移动端小头像位置微调 */
+  .mobile-avatar {
+    top: 48px;
+    right: 8px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .mobile-status-dot {
+    width: 10px;
+    height: 10px;
+    bottom: 0;
+    right: 0;
+  }
+}
+
+/* ============================================
+   超小屏幕适配
+   ============================================ */
+@media (max-width: 480px) {
+  .mobile-avatar {
+    width: 40px;
+    height: 40px;
+    top: 46px;
+    right: 6px;
+  }
+
+  .mobile-status-dot {
+    width: 8px;
+    height: 8px;
+  }
+}

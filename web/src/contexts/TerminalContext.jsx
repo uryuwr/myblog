@@ -10,6 +10,16 @@ const getWsUrl = () => {
   return `${protocol}//${host}:3001`;
 };
 
+// 生成唯一客户端 ID（用于区分不同设备/标签页）
+const generateClientId = () => {
+  const stored = sessionStorage.getItem('terminal_client_id');
+  if (stored) return stored;
+  
+  const id = `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  sessionStorage.setItem('terminal_client_id', id);
+  return id;
+};
+
 const RECONNECT_BASE_DELAY = 3000;
 const RECONNECT_MAX_DELAY = 30000;
 
@@ -24,6 +34,7 @@ export function TerminalProvider({ children }) {
   const reconnectTimerRef = useRef(null);
   const connectingRef = useRef(false);
   const messageHandlersRef = useRef(new Set()); // 存储消息处理器
+  const clientIdRef = useRef(generateClientId()); // 唯一客户端标识
 
   // 计算重连延迟（指数退避）
   const getReconnectDelay = useCallback((attempt) => {
@@ -53,13 +64,14 @@ export function TerminalProvider({ children }) {
     switch (message.type) {
       case 'auth_required':
         setAuthStatus('idle');
-        // 如果已登录，自动发送认证
+        // 如果已登录，自动发送认证（包含客户端 ID）
         const currentToken = localStorage.getItem('terminal_token');
         if (currentToken && wsRef.current?.readyState === WebSocket.OPEN) {
           setAuthStatus('authenticating');
           wsRef.current.send(JSON.stringify({
             type: 'auth',
-            token: currentToken
+            token: currentToken,
+            clientId: clientIdRef.current
           }));
         }
         break;

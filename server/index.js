@@ -6,6 +6,7 @@ import { networkInterfaces } from 'os';
 import pty from 'node-pty';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import articleRoutes from './db/articleRoutes.js';
 
 const app = express();
 const PORT = 3001;
@@ -51,6 +52,9 @@ try {
 app.use(cors());
 app.use(express.json());
 
+// 注册博客文章 API 路由
+app.use('/api', articleRoutes);
+
 // 创建 HTTP 服务器
 const server = createServer(app);
 
@@ -59,6 +63,15 @@ const wss = new WebSocketServer({ server });
 
 // 存储客户端状态（每个 WebSocket 连接独立）
 const clientState = new Map(); // Map<ws, { ptyProcess, cwd }>
+
+// 持久化 PTY 会话存储（按用户 email + clientId）
+const persistentSessions = new Map(); // Map<sessionKey, { ptyProcess, cwd, outputHistory, claudeReady }>
+const MAX_HISTORY_SIZE = 50000; // 最大历史记录字符数
+
+// 生成会话 key
+function getSessionKey(email, clientId) {
+  return clientId ? `${email}:${clientId}` : email;
+}
 
 // 危险命令黑名单
 const dangerousCommands = [
@@ -82,7 +95,9 @@ wss.on('connection', (ws, req) => {
     timeout: null,
     noTimeout: false,
     authenticated: false,
-    email: null
+    email: null,
+    clientId: null,
+    sessionKey: null
   });
 
   // 发送需要认证的消息
@@ -109,18 +124,8 @@ wss.on('connection', (ws, req) => {
     const state = clientState.get(ws);
     if (state) {
       if (state.timeout) clearTimeout(state.timeout);
-      if (state.ptyProcess) {
-        // 安全地清理 PTY 进程
-        // 使用 write 发送退出信号而不是直接 kill
-        try {
-          // 发送 exit 命令让进程自然退出
-          state.ptyProcess.write('exit\r');
-        } catch (e) {
-          // 忽略错误
-        }
-        // 不要调用 kill()，让 onExit 回调处理清理
-        state.ptyProcess = null;
-      }
+      // 不再销毁 PTY 进程，保持会话持久化
+      // 只是解除 WebSocket 与 PTY 的绑定
       clientState.delete(ws);
     }
   });
@@ -139,10 +144,38 @@ function handleMessage(ws, message) {
   if (message.type === 'auth') {
     const decoded = verifyToken(message.token);
     if (decoded) {
-      // 认证成功，初始化 PTY
+      // 认证成功
       state.authenticated = true;
       state.email = decoded.email;
-      initializePty(ws, state);
+      state.clientId = message.clientId || null;
+      state.sessionKey = getSessionKey(decoded.email, state.clientId);
+      
+      // 检查是否有持久化会话（使用 sessionKey）
+      const existingSession = persistentSessions.get(state.sessionKey);
+      if (existingSession && existingSession.ptyProcess) {
+        // 复用现有会话
+        console.log(`♻️ 复用持久会话 - 用户: ${decoded.email}, 客户端: ${state.clientId || 'default'}`);
+        state.ptyProcess = existingSession.ptyProcess;
+        state.cwd = existingSession.cwd;
+        
+        // 重新绑定 PTY 输出到新的 WebSocket
+        rebindPtyToWebSocket(ws, state, existingSession);
+        
+        // 发送认证成功消息，并请求前端发送终端尺寸
+        ws.send(JSON.stringify({
+          type: 'auth_success',
+          email: state.email,
+          message: 'PTY 会话已恢复',
+          restored: true,
+          needResize: true  // 告诉前端需要发送尺寸
+        }));
+        
+        // 不再回放历史输出，因为 Claude 会话是持久的
+        // 用户重连后看到的是当前终端状态，新的输出会实时推送
+      } else {
+        // 创建新会话
+        initializePty(ws, state, true); // true = 自动启动 claude
+      }
     } else {
       ws.send(JSON.stringify({
         type: 'auth_failed',
@@ -186,27 +219,63 @@ function handleMessage(ws, message) {
   }
 }
 
+// 重新绑定 PTY 输出到新的 WebSocket
+function rebindPtyToWebSocket(ws, state, session) {
+  // 移除旧的 onData 监听器（通过重新设置）
+  // node-pty 不支持移除监听器，但新的 onData 会覆盖
+  session.ptyProcess.onData((data) => {
+    // 更新历史记录
+    session.outputHistory += data;
+    if (session.outputHistory.length > MAX_HISTORY_SIZE) {
+      session.outputHistory = session.outputHistory.slice(-MAX_HISTORY_SIZE);
+      // 重新计算 readyIndex
+      if (session.claudeReady) {
+        session.readyIndex = 0; // 简化处理
+      }
+    }
+    
+    if (ws.readyState === ws.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'output',
+        data: data
+      }));
+    }
+  });
+}
+
 // 初始化 PTY 进程
-function initializePty(ws, state) {
+function initializePty(ws, state, autoStartClaude = false) {
   const initialCwd = process.cwd();
   
   // 创建 PTY 进程 - 使用 PowerShell
+  // 默认尺寸设置为较小值，前端连接后会发送实际尺寸
   const ptyProcess = pty.spawn('powershell.exe', [], {
     name: 'xterm-256color',
-    cols: 120,
-    rows: 30,
+    cols: 80,  // 默认 80 列，适合大部分设备
+    rows: 24,  // 默认 24 行
     cwd: initialCwd,
     env: {
       ...process.env,
       TERM: 'xterm-256color',
-      COLORTERM: 'truecolor'
+      COLORTERM: 'truecolor',
+      POWERSHELL_UPDATECHECK: 'Off'  // 禁用更新检查提示
     }
   });
 
-  console.log(`📟 PTY 进程已启动 (PID: ${ptyProcess.pid}) - 用户: ${state.email}`);
+  console.log(`📟 PTY 进程已启动 (PID: ${ptyProcess.pid}) - 用户: ${state.email}, 客户端: ${state.clientId || 'default'}`);
 
   state.ptyProcess = ptyProcess;
   state.cwd = initialCwd;
+
+  // 创建持久化会话（使用 sessionKey）
+  const session = {
+    ptyProcess,
+    cwd: initialCwd,
+    outputHistory: '',
+    claudeReady: false,
+    readyIndex: -1
+  };
+  persistentSessions.set(state.sessionKey, session);
 
   // 发送初始工作目录
   ws.send(JSON.stringify({
@@ -218,11 +287,43 @@ function initializePty(ws, state) {
   ws.send(JSON.stringify({
     type: 'auth_success',
     email: state.email,
-    message: 'PTY 终端已就绪'
+    message: autoStartClaude ? '正在启动 Claude...' : 'PTY 终端已就绪',
+    autoStarting: autoStartClaude
   }));
 
   // PTY 输出 -> WebSocket
   ptyProcess.onData((data) => {
+    // 更新历史记录
+    session.outputHistory += data;
+    if (session.outputHistory.length > MAX_HISTORY_SIZE) {
+      session.outputHistory = session.outputHistory.slice(-MAX_HISTORY_SIZE);
+    }
+    
+    // 检测 Claude 是否已准备好（检测特征：出现输入提示符 ">" 或 "❯"）
+    if (!session.claudeReady) {
+      // Claude Code 准备好的标志：出现 ">" 提示符行
+      if (data.includes('\n>') || data.includes('\r>') || data.match(/[❯>]\s*$/)) {
+        session.claudeReady = true;
+        session.readyIndex = session.outputHistory.length; // 从下一条输出开始记录
+        console.log(`✨ Claude 已就绪 - 用户: ${state.email}`);
+        
+        // 通知前端 Claude 已就绪
+        if (ws.readyState === ws.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'claude_ready'
+          }));
+        }
+        // 跳过当前这条输出（包含启动界面）
+        return;
+      }
+    }
+    
+    // 只有 Claude 准备好后才发送输出（自动启动模式下）
+    if (autoStartClaude && !session.claudeReady) {
+      // 启动过程中，不发送任何输出
+      return;
+    }
+    
     if (ws.readyState === ws.OPEN) {
       ws.send(JSON.stringify({
         type: 'output',
@@ -233,8 +334,11 @@ function initializePty(ws, state) {
 
   // PTY 退出处理
   ptyProcess.onExit(({ exitCode, signal }) => {
-    console.log(`📟 PTY 进程已退出 (code: ${exitCode}, signal: ${signal})`);
-    // 标记进程已退出，防止后续尝试 kill
+    console.log(`📟 PTY 进程已退出 (code: ${exitCode}, signal: ${signal}) - 会话: ${state.sessionKey}`);
+    // 清理持久化会话（使用 sessionKey）
+    if (state.sessionKey) {
+      persistentSessions.delete(state.sessionKey);
+    }
     state.ptyProcess = null;
     if (ws.readyState === ws.OPEN) {
       ws.send(JSON.stringify({
@@ -244,6 +348,14 @@ function initializePty(ws, state) {
       }));
     }
   });
+
+  // 自动启动 Claude
+  if (autoStartClaude) {
+    // 等待 PowerShell 初始化完成后执行 claude 命令
+    setTimeout(() => {
+      ptyProcess.write('claude\r');
+    }, 500);
+  }
 }
 
 // 处理用户输入

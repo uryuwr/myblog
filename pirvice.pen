@@ -1,0 +1,914 @@
+{
+  "version": "2.6",
+  "children": [
+    {
+      "type": "frame",
+      "id": "ppHAf",
+      "x": 0,
+      "y": 0,
+      "name": "Piweisi - 智能助手",
+      "width": 1440,
+      "fill": "#0A0A12",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "T5j9A",
+          "name": "Navbar",
+          "width": "fill_container",
+          "height": 64,
+          "fill": "#0A0A1299",
+          "padding": [
+            0,
+            56
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "xzfqq",
+              "name": "logo",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "0aF7Q",
+                  "name": "logoText",
+                  "fill": "#00F5D4",
+                  "content": "~/piweisi",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 18,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Op8UA",
+              "name": "navLinks",
+              "gap": 40,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "DFwHM",
+                  "name": "navHome",
+                  "fill": "#C0C0D0",
+                  "content": "首页",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "AHdzo",
+                  "name": "navPi",
+                  "fill": "#00F5D4",
+                  "content": "皮维斯",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "3arbl",
+                  "name": "navBlog",
+                  "fill": "#C0C0D0",
+                  "content": "博客",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "glS9k",
+                  "name": "navWrite",
+                  "fill": "#C0C0D0",
+                  "content": "写文章",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "cdVhu",
+              "name": "loginBtn",
+              "fill": "#00F5D420",
+              "cornerRadius": 6,
+              "padding": [
+                10,
+                20
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "u1Ard",
+                  "name": "loginText",
+                  "fill": "#00F5D4",
+                  "content": "登录",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "wu3qE",
+          "name": "Main Content",
+          "width": "fill_container",
+          "gap": 48,
+          "padding": [
+            48,
+            56
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "dM0gP",
+              "name": "Avatar Panel",
+              "width": 380,
+              "fill": "#12121A",
+              "cornerRadius": 16,
+              "layout": "vertical",
+              "gap": 24,
+              "padding": 32,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "tigaP",
+                  "name": "avatarGlow",
+                  "width": 240,
+                  "height": 240,
+                  "fill": "#00F5D410",
+                  "cornerRadius": 120,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "jLvPT",
+                      "name": "avatarInner",
+                      "width": 220,
+                      "height": 220,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "./images/generated-1769606881451.png",
+                        "mode": "fill"
+                      },
+                      "cornerRadius": 110
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "avbqC",
+                  "name": "statusRow",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "RpCzW",
+                      "name": "statusDot",
+                      "fill": "#00F5D4",
+                      "width": 10,
+                      "height": 10
+                    },
+                    {
+                      "type": "text",
+                      "id": "cIURT",
+                      "name": "statusText",
+                      "fill": "#00F5D4",
+                      "content": "在线 · 等待指令",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "ziEZ6",
+                  "name": "catName",
+                  "fill": "#FFFFFF",
+                  "content": "皮维斯",
+                  "fontFamily": "Oswald",
+                  "fontSize": 32,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "punMj",
+                  "name": "catSub",
+                  "fill": "#A78BFA",
+                  "content": "Pi + Service = Piweisi",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "VTX3r",
+                  "name": "divider",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#333340"
+                },
+                {
+                  "type": "text",
+                  "id": "seoj0",
+                  "name": "catDesc",
+                  "fill": "#8B8B9E",
+                  "textGrowth": "fixed-width",
+                  "width": 300,
+                  "content": "「皮」是一只蓝金渐层英短弟弟，\n温顺又聪明，是博主最好的伙伴。\n\n在这里，皮会化身为你的智能助手，\n陪你聊天、回答问题、解决难题。",
+                  "lineHeight": 1.7,
+                  "textAlign": "center",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "ARHXw",
+                  "name": "moodRow",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "0LdK1",
+                      "name": "moodLabel",
+                      "fill": "#666680",
+                      "content": "当前状态:",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VCUXm",
+                      "name": "moodBadge",
+                      "fill": "#00F5D420",
+                      "cornerRadius": 12,
+                      "padding": [
+                        6,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "CvPZ9",
+                          "name": "moodText",
+                          "fill": "#00F5D4",
+                          "content": "😺 常态",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "t6d94",
+              "name": "Terminal Panel",
+              "width": "fill_container",
+              "fill": "#12121A",
+              "cornerRadius": 16,
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "x8ayQ",
+                  "name": "termHeader",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "#0D0D15",
+                  "cornerRadius": [
+                    16,
+                    16,
+                    0,
+                    0
+                  ],
+                  "padding": [
+                    0,
+                    20
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "g92mz",
+                      "name": "termDots",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "FOTKe",
+                          "name": "dot1",
+                          "fill": "#FF6B6B",
+                          "width": 12,
+                          "height": 12
+                        },
+                        {
+                          "type": "ellipse",
+                          "id": "ujvDv",
+                          "name": "dot2",
+                          "fill": "#F59E0B",
+                          "width": 12,
+                          "height": 12
+                        },
+                        {
+                          "type": "ellipse",
+                          "id": "DMYCk",
+                          "name": "dot3",
+                          "fill": "#00F5D4",
+                          "width": 12,
+                          "height": 12
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "jyUdy",
+                      "name": "termTitle",
+                      "fill": "#8B8B9E",
+                      "content": "piweisi@chat:~$",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GeAtc",
+                      "name": "termActions",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tTesv",
+                          "name": "clearBtn",
+                          "fill": "#666680",
+                          "content": "clear",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "LOuMM",
+                          "name": "fullBtn",
+                          "fill": "#666680",
+                          "content": "⛶",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "eB5iU",
+                  "name": "Terminal Body",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 20,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "g1a2W",
+                      "name": "welcome",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "h1lf1",
+                          "name": "welcomePrompt",
+                          "fill": "#00F5D4",
+                          "content": "皮维斯 → ",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "naHqI",
+                          "name": "welcomeText",
+                          "fill": "#FFFFFF",
+                          "textGrowth": "fixed-width",
+                          "width": 700,
+                          "content": "喵~ 你好！我是皮维斯，你的智能助手。有什么可以帮你的吗？",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rm7M1",
+                      "name": "userMsg",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iwO65",
+                          "name": "userPrompt",
+                          "fill": "#A78BFA",
+                          "content": "user → ",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "DuAyz",
+                          "name": "userText",
+                          "fill": "#C0C0D0",
+                          "content": "你能做什么？",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kuRf5",
+                      "name": "aiMsg",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "dK2yt",
+                          "name": "aiPrompt",
+                          "fill": "#00F5D4",
+                          "content": "皮维斯 → ",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "oX7uM",
+                          "name": "aiText",
+                          "fill": "#FFFFFF",
+                          "textGrowth": "fixed-width",
+                          "width": 700,
+                          "content": "我可以帮你执行终端命令、回答技术问题、聊天解闷，\n或者只是静静地陪着你写代码~ 🐱\n\n试试输入 help 查看更多功能！",
+                          "lineHeight": 1.6,
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "57LXH",
+                      "name": "helpMsg",
+                      "width": "fill_container",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jlNz8",
+                          "name": "helpPrompt",
+                          "fill": "#A78BFA",
+                          "content": "user → ",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "BcBp0",
+                          "name": "helpText",
+                          "fill": "#C0C0D0",
+                          "content": "help",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ykTis",
+                      "name": "helpResponse",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": [
+                        12,
+                        0,
+                        0,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "4nIuX",
+                          "name": "helpTitle",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "gMA3z",
+                              "name": "helpTitlePrompt",
+                              "fill": "#00F5D4",
+                              "content": "皮维斯 → ",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "eNkQF",
+                              "name": "helpTitleText",
+                              "fill": "#FFFFFF",
+                              "content": "可用命令列表:",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ERNUc",
+                          "name": "cmdList",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": [
+                            0,
+                            0,
+                            0,
+                            80
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "wi7vN",
+                              "name": "cmd1",
+                              "fill": "#C0C0D0",
+                              "content": "chat <message>   - 与皮维斯聊天",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ILlyU",
+                              "name": "cmd2",
+                              "fill": "#C0C0D0",
+                              "content": "exec <command>   - 执行终端命令",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "PAsga",
+                              "name": "cmd3",
+                              "fill": "#C0C0D0",
+                              "content": "clear            - 清空聊天记录",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "bFneB",
+                              "name": "cmd4",
+                              "fill": "#C0C0D0",
+                              "content": "mood             - 查看皮的心情",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "pFm95",
+                              "name": "cmd5",
+                              "fill": "#C0C0D0",
+                              "content": "help             - 显示帮助信息",
+                              "fontFamily": "JetBrains Mono",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "W9o0H",
+                  "name": "inputSection",
+                  "width": "fill_container",
+                  "fill": "#0D0D15",
+                  "cornerRadius": [
+                    0,
+                    0,
+                    16,
+                    16
+                  ],
+                  "gap": 12,
+                  "padding": [
+                    16,
+                    24
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "8I6fE",
+                      "name": "inputPrompt",
+                      "fill": "#00F5D4",
+                      "content": "$",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "9I5PX",
+                      "name": "inputBox",
+                      "width": "fill_container",
+                      "height": 48,
+                      "fill": "#1A1A2E",
+                      "cornerRadius": 8,
+                      "padding": [
+                        14,
+                        18
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "XOQC1",
+                          "name": "inputPlaceholder",
+                          "fill": "#666680",
+                          "content": "输入消息或命令...",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "CbzUK",
+                      "name": "sendBtn",
+                      "fill": "#00F5D4",
+                      "cornerRadius": 8,
+                      "padding": [
+                        14,
+                        24
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nKgpN",
+                          "name": "sendText",
+                          "fill": "#0A0A12",
+                          "content": "发送",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "OE46H",
+          "name": "Footer",
+          "width": "fill_container",
+          "height": 56,
+          "fill": "#0A0A12",
+          "padding": [
+            0,
+            56
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "m0hYb",
+              "name": "footerText",
+              "fill": "#666680",
+              "content": "// 皮维斯 - 你的智能伙伴 🐱 Powered by AI",
+              "fontFamily": "JetBrains Mono",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "8GZll",
+      "x": 1520,
+      "y": 0,
+      "name": "Avatar States Guide",
+      "width": 500,
+      "fill": "#12121A",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 32,
+      "children": [
+        {
+          "type": "text",
+          "id": "py5gE",
+          "name": "statesTitle",
+          "fill": "#FFFFFF",
+          "content": "// 皮维斯形象状态指南",
+          "fontFamily": "JetBrains Mono",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "KmFU7",
+          "name": "statesSub",
+          "fill": "#8B8B9E",
+          "content": "使用您提供的两张图片作为虚拟形象",
+          "fontFamily": "JetBrains Mono",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "cVg4p",
+          "name": "divider2",
+          "width": "fill_container",
+          "height": 1,
+          "fill": "#333340"
+        },
+        {
+          "type": "frame",
+          "id": "xXVYy",
+          "name": "state1Row",
+          "gap": 20,
+          "children": [
+            {
+              "type": "frame",
+              "id": "LONfe",
+              "name": "state1Box",
+              "width": 120,
+              "height": 120,
+              "fill": "#1A1A2E",
+              "cornerRadius": 12,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "b6tqJ",
+                  "name": "state1Placeholder",
+                  "fill": "#666680",
+                  "content": "图1\n常态",
+                  "textAlign": "center",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "XLbCY",
+              "name": "state1Info",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "v1NX1",
+                  "name": "state1Label",
+                  "fill": "#00F5D4",
+                  "content": "😺 常态形象",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 16,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "Fjqcs",
+                  "name": "state1Desc",
+                  "fill": "#C0C0D0",
+                  "content": "等待指令、空闲聊天时显示",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "6F1bn",
+          "name": "state2Row",
+          "gap": 20,
+          "children": [
+            {
+              "type": "frame",
+              "id": "r2fD8",
+              "name": "state2Box",
+              "width": 120,
+              "height": 120,
+              "fill": "#1A1A2E",
+              "cornerRadius": 12,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "09Zmh",
+                  "name": "state2Placeholder",
+                  "fill": "#666680",
+                  "content": "图2\n任务中",
+                  "textAlign": "center",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Ev1TZ",
+              "name": "state2Info",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "VZ7AG",
+                  "name": "state2Label",
+                  "fill": "#FF6B6B",
+                  "content": "😾 任务进行中",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 16,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "6eFEb",
+                  "name": "state2Desc",
+                  "fill": "#C0C0D0",
+                  "content": "执行命令、处理复杂任务时显示",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "HsyR1",
+          "name": "noteBox",
+          "width": "fill_container",
+          "fill": "#00F5D410",
+          "cornerRadius": 8,
+          "layout": "vertical",
+          "gap": 8,
+          "padding": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "AHCND",
+              "name": "noteTitle",
+              "fill": "#00F5D4",
+              "content": "💡 实现说明",
+              "fontFamily": "JetBrains Mono",
+              "fontSize": 13,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "9hoUy",
+              "name": "noteText",
+              "fill": "#8B8B9E",
+              "content": "将您提供的两张 PNG 图片放入\nweb/src/assets/ 目录，\n根据任务状态动态切换显示。",
+              "lineHeight": 1.6,
+              "fontFamily": "JetBrains Mono",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

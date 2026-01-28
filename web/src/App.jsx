@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import BlogList from './pages/BlogList';
 import BlogDetail from './pages/BlogDetail';
 import WriteArticle from './pages/WriteArticle';
+import Piweisi from './pages/Piweisi';
 
 function App() {
   return (
@@ -16,7 +17,7 @@ function App() {
             <Route path="/blog" element={<BlogList />} />
             <Route path="/blog/:id" element={<BlogDetail />} />
             <Route path="/write" element={<WriteArticle />} />
-            <Route path="/about" element={<Home />} />
+            <Route path="/piweisi" element={<Piweisi />} />
           </Routes>
         </BrowserRouter>
       </TerminalProvider>

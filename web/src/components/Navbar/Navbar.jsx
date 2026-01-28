@@ -10,8 +10,8 @@ export default function Navbar() {
   
   const navLinks = [
     { path: '/', label: '首页' },
+    { path: '/piweisi', label: '皮维斯' },
     { path: '/blog', label: '博客' },
-    { path: '/about', label: '关于' },
     { path: '/write', label: '写文章' }
   ];
 

@@ -8,7 +8,7 @@ import LoginModal from '../LoginModal/LoginModal';
 import '@xterm/xterm/css/xterm.css';
 import './Terminal.css';
 
-const Terminal = () => {
+const Terminal = ({ onActivityChange }) => {
   const { token } = useAuth();
   const { isConnected, authStatus, sendMessage, addMessageHandler, wsRef } = useTerminal();
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -16,6 +16,8 @@ const Terminal = () => {
   const [mobileInput, setMobileInput] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
+  const activityTimeoutRef = useRef(null);
+  const lastTapRef = useRef(0); // 双击检测
   
   const terminalContainerRef = useRef(null);
   const xtermRef = useRef(null);
@@ -78,7 +80,11 @@ const Terminal = () => {
     xterm.loadAddon(webLinksAddon);
     
     xterm.open(terminalContainerRef.current);
-    fitAddon.fit();
+    
+    // 延迟 fit 确保容器尺寸正确
+    requestAnimationFrame(() => {
+      fitAddon.fit();
+    });
 
     xtermRef.current = xterm;
     fitAddonRef.current = fitAddon;
@@ -88,20 +94,51 @@ const Terminal = () => {
       sendMessage({ type: 'input', data });
     });
 
-    // 窗口大小改变时调整终端
-    const handleResize = () => {
-      fitAddon.fit();
-      sendMessage({
-        type: 'resize',
-        cols: xterm.cols,
-        rows: xterm.rows
-      });
+    // 发送 resize 消息的函数
+    const sendResize = () => {
+      if (xtermRef.current && fitAddonRef.current) {
+        fitAddonRef.current.fit();
+        sendMessage({
+          type: 'resize',
+          cols: xtermRef.current.cols,
+          rows: xtermRef.current.rows
+        });
+      }
     };
 
+    // 窗口大小改变时调整终端
+    const handleResize = () => {
+      sendResize();
+    };
+
+    // 页面可见性变化时重新同步尺寸
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // 延迟执行，确保布局已更新
+        setTimeout(sendResize, 100);
+      }
+    };
+
+    // 使用 ResizeObserver 监听容器尺寸变化（更可靠）
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined' && terminalContainerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        // 防抖处理
+        clearTimeout(resizeObserver._debounceTimer);
+        resizeObserver._debounceTimer = setTimeout(sendResize, 50);
+      });
+      resizeObserver.observe(terminalContainerRef.current);
+    }
+
     window.addEventListener('resize', handleResize);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       xterm.dispose();
       xtermRef.current = null;
       fitAddonRef.current = null;
@@ -113,6 +150,19 @@ const Terminal = () => {
     const handleMessage = (message) => {
       if (!xtermRef.current) return;
 
+      // 检测活动状态 - 收到输出时标记为工作中
+      if (message.type === 'output' && onActivityChange) {
+        onActivityChange(true);
+        // 清除之前的定时器
+        if (activityTimeoutRef.current) {
+          clearTimeout(activityTimeoutRef.current);
+        }
+        // 1.5秒无输出后恢复常态
+        activityTimeoutRef.current = setTimeout(() => {
+          onActivityChange(false);
+        }, 1500);
+      }
+
       switch (message.type) {
         case 'auth_required':
           if (!token) {
@@ -122,14 +172,43 @@ const Terminal = () => {
           break;
 
         case 'auth_success':
-          xtermRef.current.writeln(`\x1b[32m✓ 已登录: ${message.email}\x1b[0m`);
-          xtermRef.current.writeln(`\x1b[36m[${message.message}]\x1b[0m\r\n`);
-          // 发送终端大小
-          sendMessage({
-            type: 'resize',
-            cols: xtermRef.current.cols,
-            rows: xtermRef.current.rows
-          });
+          if (message.restored) {
+            // 会话恢复，简短提示
+            xtermRef.current.writeln(`\x1b[32m✓ 会话已恢复\x1b[0m\r\n`);
+          } else if (message.autoStarting) {
+            // 自动启动 Claude，显示加载提示
+            xtermRef.current.writeln(`\x1b[36m🐱 皮维斯正在启动中...\x1b[0m\r\n`);
+          } else {
+            xtermRef.current.writeln(`\x1b[32m✓ 已登录: ${message.email}\x1b[0m`);
+            xtermRef.current.writeln(`\x1b[36m[${message.message}]\x1b[0m\r\n`);
+          }
+          
+          // 重新调整终端尺寸并发送到服务端
+          if (fitAddonRef.current) {
+            // 延迟执行，确保 PTY 绑定完成
+            setTimeout(() => {
+              fitAddonRef.current.fit();
+              sendMessage({
+                type: 'resize',
+                cols: xtermRef.current.cols,
+                rows: xtermRef.current.rows
+              });
+            }, 200);
+          }
+          break;
+
+        case 'claude_ready':
+          // Claude 已准备好，可以开始使用
+          xtermRef.current.writeln(`\x1b[32m✨ 皮维斯已就绪，开始工作吧！\x1b[0m\r\n`);
+          // 重新调整终端大小，修复光标位置
+          if (fitAddonRef.current) {
+            fitAddonRef.current.fit();
+            sendMessage({
+              type: 'resize',
+              cols: xtermRef.current.cols,
+              rows: xtermRef.current.rows
+            });
+          }
           break;
 
         case 'auth_failed':
@@ -163,8 +242,29 @@ const Terminal = () => {
     };
 
     const unsubscribe = addMessageHandler(handleMessage);
-    return unsubscribe;
-  }, [addMessageHandler, sendMessage, token]);
+    return () => {
+      unsubscribe();
+      if (activityTimeoutRef.current) {
+        clearTimeout(activityTimeoutRef.current);
+      }
+    };
+  }, [addMessageHandler, sendMessage, token, onActivityChange]);
+
+  // WebSocket 连接状态变化时同步终端尺寸
+  useEffect(() => {
+    if (isConnected && fitAddonRef.current && xtermRef.current) {
+      // 连接成功后延迟同步尺寸
+      const timer = setTimeout(() => {
+        fitAddonRef.current.fit();
+        sendMessage({
+          type: 'resize',
+          cols: xtermRef.current.cols,
+          rows: xtermRef.current.rows
+        });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isConnected, sendMessage]);
 
   // 全屏模式变化时重新调整大小
   useEffect(() => {
@@ -179,7 +279,27 @@ const Terminal = () => {
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    // 全屏模式时锁定 body 滚动
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    }
+
+    return () => {
+      clearTimeout(timer);
+      // 清理
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    };
   }, [isFullscreen, sendMessage]);
 
   // 监听 Escape 键退出全屏
@@ -254,13 +374,17 @@ const Terminal = () => {
 
   const toggleFullscreen = () => setIsFullscreen(prev => !prev);
 
-  const focusTerminal = () => {
-    if (isMobile && mobileInputRef.current) {
-      mobileInputRef.current.focus();
-    } else if (xtermRef.current) {
+  // 点击终端区域 - 移动端不自动弹出键盘，需要双击
+  const focusTerminal = useCallback(() => {
+    // 移动端不在单击时弹出键盘，只聚焦 xterm
+    if (isMobile) {
+      // 不调用 focus，等待双击才唤起键盘
+      return;
+    }
+    if (xtermRef.current) {
       xtermRef.current.focus();
     }
-  };
+  }, [isMobile]);
 
   const handleLoginSuccess = useCallback(() => {
     setShowLoginModal(false);
@@ -270,6 +394,24 @@ const Terminal = () => {
       wsRef.current.send(JSON.stringify({ type: 'auth', token: newToken }));
     }
   }, [wsRef]);
+
+  // 双击检测 - 移动端双击唤起键盘
+  const handleDoubleTap = useCallback((e) => {
+    if (!isMobile) return;
+    
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300; // 300ms 内算双击
+    
+    if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
+      // 双击，唤起键盘
+      if (mobileInputRef.current) {
+        mobileInputRef.current.focus();
+      }
+      lastTapRef.current = 0; // 重置
+    } else {
+      lastTapRef.current = now;
+    }
+  }, [isMobile]);
 
   return (
     <div 
@@ -306,7 +448,11 @@ const Terminal = () => {
       </div>
 
       <div className="terminal-content">
-        <div ref={terminalContainerRef} className="xterm-container" />
+        <div 
+          ref={terminalContainerRef} 
+          className="xterm-container"
+          onTouchEnd={handleDoubleTap}
+        />
         
         {/* 移动端输入框 */}
         {isMobile && (

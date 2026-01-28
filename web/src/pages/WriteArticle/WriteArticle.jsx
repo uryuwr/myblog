@@ -8,8 +8,17 @@ import Navbar from '../../components/Navbar';
 import LoginModal from '../../components/LoginModal/LoginModal';
 import UserInfo from '../../components/UserInfo';
 import { useAuth } from '../../contexts/AuthContext';
-import { categories, api } from '../../mock/data';
+import { api } from '../../services/api';
 import './WriteArticle.css';
+
+// 分类数据（静态）
+const categories = [
+  { id: 'all', name: '全部', color: '#00F5D4' },
+  { id: 'frontend', name: '前端', color: '#00F5D4' },
+  { id: 'backend', name: '后端', color: '#A78BFA' },
+  { id: 'tools', name: '工具', color: '#F59E0B' },
+  { id: 'thoughts', name: '随想', color: '#FF6B6B' }
+];
 
 export default function WriteArticle() {
   const navigate = useNavigate();

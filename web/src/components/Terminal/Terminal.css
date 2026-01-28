@@ -158,6 +158,7 @@
   overflow: hidden;
   background: #0D0D15;
   padding: 8px;
+  position: relative;
 }
 
 /* xterm 容器 */
@@ -169,16 +170,28 @@
 
 .xterm-container .xterm {
   height: 100%;
-  padding: 4px;
 }
 
 .xterm-container .xterm-viewport {
   overflow-y: auto !important;
 }
 
-/* 自定义 xterm 滚动条 */
+/* 移动端禁止 xterm 内部元素获取焦点 */
+@media (max-width: 768px), (pointer: coarse) {
+  .xterm-container .xterm-helper-textarea {
+    /* 隐藏 xterm 的隐藏输入框，防止自动弹出键盘 */
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+}
+
+/* ============================================
+   自定义 xterm 滚动条 - 桌面端
+   ============================================ */
 .xterm-container .xterm-viewport::-webkit-scrollbar {
-  width: 8px;
+  width: 4px;
 }
 
 .xterm-container .xterm-viewport::-webkit-scrollbar-track {
@@ -186,12 +199,61 @@
 }
 
 .xterm-container .xterm-viewport::-webkit-scrollbar-thumb {
-  background: var(--accent-cyan-30);
-  border-radius: 4px;
+  background: var(--accent-cyan-40);
+  border-radius: 100px;
 }
 
 .xterm-container .xterm-viewport::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-cyan-50);
+  background: var(--accent-cyan);
+}
+
+/* Firefox 滚动条 */
+.xterm-container .xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-cyan-40) transparent;
+}
+
+/* ============================================
+   移动端隐藏滚动条，使用触摸滑动
+   ============================================ */
+@media (max-width: 768px), (pointer: coarse) {
+  /* 隐藏 xterm viewport 滚动条 */
+  .xterm-container .xterm-viewport::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  .xterm-container .xterm-viewport {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    -webkit-overflow-scrolling: touch;
+    overflow-y: scroll !important;
+  }
+  
+  /* 隐藏 xterm screen 滚动条 */
+  .xterm-container .xterm-screen::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+  }
+  
+  .xterm-container .xterm-screen {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  
+  /* 隐藏整个 xterm 容器的滚动条 */
+  .xterm-container .xterm::-webkit-scrollbar,
+  .xterm-container::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+  }
+  
+  .xterm-container .xterm,
+  .xterm-container {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
 }
 
 /* 连接中遮罩 */
@@ -281,21 +343,30 @@
   .terminal {
     max-width: 100%;
     height: 300px;
+    /* 移动端终端容器触摸优化 */
+    touch-action: none; /* 完全由 JS 控制触摸 */
   }
   
   .terminal.fullscreen .terminal-bar {
     height: 44px;
     padding: 0 var(--space-5);
   }
+  
+  /* 终端内容区域启用触摸滚动 */
+  .terminal-content {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* 移动端隐藏输入框 - 用于捕获虚拟键盘 */
 .mobile-input {
   position: absolute;
-  top: 0;
+  /* 放在可见区域外，避免输入时视口移动 */
+  top: 50%;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 1px;
+  height: 1px;
   opacity: 0;
   background: transparent;
   border: none;
@@ -303,9 +374,11 @@
   color: transparent;
   caret-color: transparent;
   font-size: 16px; /* 防止 iOS 自动缩放 */
-  z-index: 5;
+  z-index: -1;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  /* 防止输入时页面抖动 */
+  transform: translateY(-50%);
 }
 
 .mobile-input:focus {
