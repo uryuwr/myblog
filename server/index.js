@@ -1,0 +1,457 @@
+import express from 'express';
+import cors from 'cors';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
+import { networkInterfaces } from 'os';
+import pty from 'node-pty';
+import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
+
+const app = express();
+const PORT = 3001;
+const DEFAULT_TIMEOUT = 60000; // 60秒默认超时
+
+// ========== 认证配置 ==========
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
+const JWT_EXPIRES_IN = '7d'; // Token 有效期 7 天
+const CODE_EXPIRES_IN = 5 * 60 * 1000; // 验证码 5 分钟有效
+const CODE_RESEND_INTERVAL = 60 * 1000; // 重发间隔 60 秒
+
+// 允许登录的邮箱白名单（留空表示允许所有邮箱）
+const ALLOWED_EMAILS = [
+   '289561901@qq.com',
+  // 'user@example.com'
+];
+
+// 邮件 SMTP 配置（请修改为你的邮箱配置）
+const SMTP_CONFIG = {
+  host: process.env.SMTP_HOST || 'smtp.qq.com',
+  port: parseInt(process.env.SMTP_PORT) || 465,
+  secure: true, // 使用 SSL
+  auth: {
+    user: process.env.SMTP_USER || 'your-email@qq.com',
+    pass: process.env.SMTP_PASS || 'your-smtp-password' // QQ邮箱使用授权码
+  }
+};
+
+// 发件人信息
+const EMAIL_FROM = process.env.EMAIL_FROM || '"MyBlog Terminal" <your-email@qq.com>';
+
+// 验证码存储（内存存储，生产环境建议使用 Redis）
+const verificationCodes = new Map(); // Map<email, { code, expiresAt, createdAt }>
+
+// 创建邮件传输器
+let transporter = null;
+try {
+  transporter = nodemailer.createTransport(SMTP_CONFIG);
+} catch (error) {
+  console.warn('⚠️ 邮件服务配置失败，请检查 SMTP 配置');
+}
+
+app.use(cors());
+app.use(express.json());
+
+// 创建 HTTP 服务器
+const server = createServer(app);
+
+// 创建 WebSocket 服务器
+const wss = new WebSocketServer({ server });
+
+// 存储客户端状态（每个 WebSocket 连接独立）
+const clientState = new Map(); // Map<ws, { ptyProcess, cwd }>
+
+// 危险命令黑名单
+const dangerousCommands = [
+  'format c:',
+  'del /s /q c:',
+  'rm -rf /',
+  'rmdir /s /q c:',
+  'shutdown',
+  'restart-computer',
+  'stop-computer'
+];
+
+// WebSocket 连接处理
+wss.on('connection', (ws, req) => {
+  console.log('🔌 WebSocket 客户端已连接');
+  
+  // 初始化客户端状态（未认证）
+  clientState.set(ws, {
+    ptyProcess: null,
+    cwd: null,
+    timeout: null,
+    noTimeout: false,
+    authenticated: false,
+    email: null
+  });
+
+  // 发送需要认证的消息
+  ws.send(JSON.stringify({
+    type: 'auth_required',
+    message: '请先登录以使用终端'
+  }));
+
+  // WebSocket 消息处理
+  ws.on('message', (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+      handleMessage(ws, message);
+    } catch (error) {
+      ws.send(JSON.stringify({
+        type: 'error',
+        error: '无效的消息格式'
+      }));
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('🔌 WebSocket 客户端已断开');
+    const state = clientState.get(ws);
+    if (state) {
+      if (state.timeout) clearTimeout(state.timeout);
+      if (state.ptyProcess) {
+        // 安全地清理 PTY 进程
+        // 使用 write 发送退出信号而不是直接 kill
+        try {
+          // 发送 exit 命令让进程自然退出
+          state.ptyProcess.write('exit\r');
+        } catch (e) {
+          // 忽略错误
+        }
+        // 不要调用 kill()，让 onExit 回调处理清理
+        state.ptyProcess = null;
+      }
+      clientState.delete(ws);
+    }
+  });
+
+  ws.on('error', (error) => {
+    console.error('WebSocket 错误:', error);
+  });
+});
+
+// 处理 WebSocket 消息
+function handleMessage(ws, message) {
+  const state = clientState.get(ws);
+  if (!state) return;
+
+  // 处理认证消息
+  if (message.type === 'auth') {
+    const decoded = verifyToken(message.token);
+    if (decoded) {
+      // 认证成功，初始化 PTY
+      state.authenticated = true;
+      state.email = decoded.email;
+      initializePty(ws, state);
+    } else {
+      ws.send(JSON.stringify({
+        type: 'auth_failed',
+        error: 'Token 无效或已过期，请重新登录'
+      }));
+    }
+    return;
+  }
+
+  // 未认证时拒绝其他操作
+  if (!state.authenticated) {
+    ws.send(JSON.stringify({
+      type: 'auth_required',
+      error: '请先登录'
+    }));
+    return;
+  }
+
+  switch (message.type) {
+    case 'input':
+      // 用户输入 -> PTY
+      handleInput(ws, state, message.data);
+      break;
+    
+    case 'resize':
+      // 调整终端大小
+      if (state.ptyProcess && message.cols && message.rows) {
+        state.ptyProcess.resize(message.cols, message.rows);
+      }
+      break;
+    
+    case 'kill':
+      // 发送 Ctrl+C (SIGINT)
+      if (state.ptyProcess) {
+        state.ptyProcess.write('\x03');
+      }
+      break;
+
+    default:
+      ws.send(JSON.stringify({ type: 'error', error: `未知消息类型: ${message.type}` }));
+  }
+}
+
+// 初始化 PTY 进程
+function initializePty(ws, state) {
+  const initialCwd = process.cwd();
+  
+  // 创建 PTY 进程 - 使用 PowerShell
+  const ptyProcess = pty.spawn('powershell.exe', [], {
+    name: 'xterm-256color',
+    cols: 120,
+    rows: 30,
+    cwd: initialCwd,
+    env: {
+      ...process.env,
+      TERM: 'xterm-256color',
+      COLORTERM: 'truecolor'
+    }
+  });
+
+  console.log(`📟 PTY 进程已启动 (PID: ${ptyProcess.pid}) - 用户: ${state.email}`);
+
+  state.ptyProcess = ptyProcess;
+  state.cwd = initialCwd;
+
+  // 发送初始工作目录
+  ws.send(JSON.stringify({
+    type: 'cwd',
+    cwd: initialCwd
+  }));
+
+  // 发送认证成功消息
+  ws.send(JSON.stringify({
+    type: 'auth_success',
+    email: state.email,
+    message: 'PTY 终端已就绪'
+  }));
+
+  // PTY 输出 -> WebSocket
+  ptyProcess.onData((data) => {
+    if (ws.readyState === ws.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'output',
+        data: data
+      }));
+    }
+  });
+
+  // PTY 退出处理
+  ptyProcess.onExit(({ exitCode, signal }) => {
+    console.log(`📟 PTY 进程已退出 (code: ${exitCode}, signal: ${signal})`);
+    // 标记进程已退出，防止后续尝试 kill
+    state.ptyProcess = null;
+    if (ws.readyState === ws.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'exit',
+        code: exitCode,
+        signal
+      }));
+    }
+  });
+}
+
+// 处理用户输入
+function handleInput(ws, state, input) {
+  if (!input || !state.ptyProcess) return;
+
+  // 安全检查（仅在回车时检查完整命令）
+  if (input.includes('\r') || input.includes('\n')) {
+    const lowerInput = input.toLowerCase();
+    for (const dangerous of dangerousCommands) {
+      if (lowerInput.includes(dangerous)) {
+        ws.send(JSON.stringify({
+          type: 'error',
+          error: `禁止执行危险命令: ${dangerous}`
+        }));
+        return;
+      }
+    }
+  }
+
+  // 写入 PTY
+  state.ptyProcess.write(input);
+}
+
+// HTTP API（保留作为备用）
+app.get('/api/terminal/cwd', (req, res) => {
+  res.json({ cwd: process.cwd() });
+});
+
+// ========== 认证 API ==========
+
+// 生成 6 位数字验证码
+function generateCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// 发送验证码
+app.post('/api/auth/send-code', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: '请输入有效的邮箱地址' });
+    }
+
+    // 检查邮箱白名单
+    if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(email.toLowerCase())) {
+      return res.status(403).json({ error: '该邮箱未授权使用终端功能' });
+    }
+
+    // 检查是否在重发间隔内
+    const existing = verificationCodes.get(email);
+    if (existing && Date.now() - existing.createdAt < CODE_RESEND_INTERVAL) {
+      const waitSeconds = Math.ceil((CODE_RESEND_INTERVAL - (Date.now() - existing.createdAt)) / 1000);
+      return res.status(429).json({ error: `请等待 ${waitSeconds} 秒后再试` });
+    }
+
+    // 生成验证码
+    const code = generateCode();
+    const expiresAt = Date.now() + CODE_EXPIRES_IN;
+    
+    // 存储验证码
+    verificationCodes.set(email, {
+      code,
+      expiresAt,
+      createdAt: Date.now()
+    });
+
+    // 发送邮件
+    if (transporter) {
+      try {
+        await transporter.sendMail({
+          from: EMAIL_FROM,
+          to: email,
+          subject: 'MyBlog Terminal 登录验证码',
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #333; margin-bottom: 20px;">终端登录验证</h2>
+              <p style="color: #666; font-size: 14px;">您正在登录 MyBlog Terminal，验证码如下：</p>
+              <div style="background: linear-gradient(135deg, #0D0D15 0%, #1a1a2e 100%); border-radius: 8px; padding: 24px; text-align: center; margin: 20px 0;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: bold; color: #66D9FF; letter-spacing: 8px;">${code}</span>
+              </div>
+              <p style="color: #999; font-size: 12px;">验证码 5 分钟内有效，请勿泄露给他人。</p>
+              <p style="color: #999; font-size: 12px;">如果这不是您的操作，请忽略此邮件。</p>
+            </div>
+          `
+        });
+        console.log(`📧 验证码已发送至 ${email}`);
+      } catch (emailError) {
+        console.error('邮件发送失败:', emailError);
+        // 开发模式：邮件发送失败时在控制台显示验证码
+        console.log(`📧 [DEV] 邮箱: ${email}, 验证码: ${code}`);
+      }
+    } else {
+      // 没有配置邮件服务，仅在控制台输出
+      console.log(`📧 [DEV] 邮箱: ${email}, 验证码: ${code}`);
+    }
+
+    res.json({ 
+      success: true, 
+      message: '验证码已发送',
+      expiresIn: CODE_EXPIRES_IN / 1000 // 返回过期时间（秒）
+    });
+  } catch (error) {
+    console.error('发送验证码失败:', error);
+    res.status(500).json({ error: '发送验证码失败，请稍后重试' });
+  }
+});
+
+// 验证登录
+app.post('/api/auth/verify', (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({ error: '请输入邮箱和验证码' });
+    }
+
+    const stored = verificationCodes.get(email);
+    
+    if (!stored) {
+      return res.status(400).json({ error: '请先获取验证码' });
+    }
+
+    if (Date.now() > stored.expiresAt) {
+      verificationCodes.delete(email);
+      return res.status(400).json({ error: '验证码已过期，请重新获取' });
+    }
+
+    if (stored.code !== code) {
+      return res.status(400).json({ error: '验证码错误' });
+    }
+
+    // 验证成功，删除验证码
+    verificationCodes.delete(email);
+
+    // 生成 JWT Token
+    const token = jwt.sign(
+      { email, loginAt: Date.now() },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    console.log(`✅ 用户 ${email} 登录成功`);
+
+    res.json({
+      success: true,
+      token,
+      email,
+      expiresIn: JWT_EXPIRES_IN
+    });
+  } catch (error) {
+    console.error('验证失败:', error);
+    res.status(500).json({ error: '验证失败，请稍后重试' });
+  }
+});
+
+// 验证 Token
+app.get('/api/auth/verify-token', (req, res) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ valid: false, error: '未提供 Token' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    res.json({ valid: true, email: decoded.email });
+  } catch (error) {
+    res.status(401).json({ valid: false, error: 'Token 无效或已过期' });
+  }
+});
+
+// 验证 WebSocket Token（供内部使用）
+function verifyToken(token) {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
+
+// 健康检查
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', websocket: true, pty: true });
+});
+
+// 获取本机局域网 IP
+function getLocalIP() {
+  const nets = networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+// 启动服务器 - 监听所有网络接口
+server.listen(PORT, '0.0.0.0', () => {
+  const localIP = getLocalIP();
+  console.log(`🚀 Terminal Server running at http://localhost:${PORT}`);
+  console.log(`🌐 局域网访问: http://${localIP}:${PORT}`);
+  console.log(`🔌 WebSocket endpoint: ws://${localIP}:${PORT}`);
+  console.log(`📟 使用 node-pty 提供完整 PTY 支持`);
+  console.log(`📁 Working directory: ${process.cwd()}`);
+});

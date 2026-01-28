@@ -1,0 +1,381 @@
+/* ============================================
+   终端组件样式 - xterm.js + 全屏动画
+   ============================================ */
+
+.terminal {
+  width: 100%;
+  max-width: 620px;
+  height: 400px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 
+    0 0 60px var(--accent-cyan-20),
+    0 0 120px var(--accent-violet-15);
+  position: relative;
+  
+  /* 全屏动画过渡 */
+  transition: 
+    all 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s ease;
+}
+
+.terminal:focus {
+  outline: none;
+  border-color: var(--accent-cyan-50);
+}
+
+/* 全屏模式 */
+.terminal.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: none;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  z-index: 9999;
+  box-shadow: none;
+  border: none;
+}
+
+/* 窗口栏 */
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-7);
+  height: 40px;
+  background: var(--bg-code);
+  border-bottom: 1px solid var(--accent-cyan-20);
+  flex-shrink: 0;
+}
+
+.terminal.fullscreen .terminal-bar {
+  height: 48px;
+  padding: 0 var(--space-9);
+}
+
+.terminal-dots {
+  display: flex;
+  gap: var(--gap-md);
+}
+
+.terminal-dots .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.terminal-dots .dot:hover {
+  transform: scale(1.2);
+}
+
+.terminal-dots .dot.red { background: var(--accent-red); }
+.terminal-dots .dot.yellow { background: var(--accent-orange); }
+.terminal-dots .dot.green { background: var(--accent-cyan); }
+
+.terminal-title-area {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.terminal-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* 连接状态指示器 */
+.connection-status {
+  font-size: 10px;
+  transition: color 0.3s ease;
+}
+
+.connection-status.connected {
+  color: #4ADE80;
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+.connection-status.disconnected {
+  color: var(--accent-red);
+  animation: pulse-red 1s ease-in-out infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* 全屏按钮 */
+.fullscreen-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fullscreen-btn:hover {
+  background: var(--accent-cyan-10);
+  border-color: var(--accent-cyan-50);
+  color: var(--accent-cyan);
+  transform: scale(1.05);
+}
+
+.fullscreen-btn:active {
+  transform: scale(0.95);
+}
+
+.terminal.fullscreen .fullscreen-btn {
+  width: 32px;
+  height: 32px;
+}
+
+/* 终端内容 */
+.terminal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #0D0D15;
+  padding: 8px;
+}
+
+/* xterm 容器 */
+.xterm-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.xterm-container .xterm {
+  height: 100%;
+  padding: 4px;
+}
+
+.xterm-container .xterm-viewport {
+  overflow-y: auto !important;
+}
+
+/* 自定义 xterm 滚动条 */
+.xterm-container .xterm-viewport::-webkit-scrollbar {
+  width: 8px;
+}
+
+.xterm-container .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.xterm-container .xterm-viewport::-webkit-scrollbar-thumb {
+  background: var(--accent-cyan-30);
+  border-radius: 4px;
+}
+
+.xterm-container .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan-50);
+}
+
+/* 连接中遮罩 */
+.terminal-overlay {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(13, 13, 21, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.connecting-message {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--accent-cyan);
+  animation: pulse-text 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* 登录提示遮罩 */
+.terminal-overlay.login-prompt {
+  cursor: pointer;
+  background: rgba(13, 13, 21, 0.95);
+  transition: background 0.2s ease;
+}
+
+.terminal-overlay.login-prompt:hover {
+  background: rgba(13, 13, 21, 0.85);
+}
+
+.login-prompt-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px;
+}
+
+.login-prompt-content svg {
+  color: var(--accent-cyan);
+  opacity: 0.8;
+}
+
+.login-prompt-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.login-prompt-content p {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 全屏切换动画遮罩 */
+.terminal.fullscreen::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: -1;
+  animation: fade-in-bg 0.3s ease;
+}
+
+@keyframes fade-in-bg {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .terminal {
+    max-width: 100%;
+    height: 300px;
+  }
+  
+  .terminal.fullscreen .terminal-bar {
+    height: 44px;
+    padding: 0 var(--space-5);
+  }
+}
+
+/* 移动端隐藏输入框 - 用于捕获虚拟键盘 */
+.mobile-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px; /* 防止 iOS 自动缩放 */
+  z-index: 5;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.mobile-input:focus {
+  outline: none;
+}
+
+/* 移动端时让 terminal-content 相对定位 */
+.terminal-content {
+  position: relative;
+}
+
+/* 移动端虚拟按键 */
+.virtual-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(13, 13, 21, 0.95);
+  border-top: 1px solid var(--accent-cyan-20);
+}
+
+.virtual-keys-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.vk-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 10px;
+  background: rgba(102, 217, 255, 0.1);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 6px;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.vk-btn:active {
+  background: rgba(102, 217, 255, 0.3);
+  transform: scale(0.95);
+}
+
+.vk-btn.vk-ctrl {
+  background: rgba(255, 107, 107, 0.15);
+  border-color: rgba(255, 107, 107, 0.4);
+  color: #ff6b6b;
+}
+
+.vk-btn.vk-ctrl:active {
+  background: rgba(255, 107, 107, 0.35);
+}
+
+.vk-btn.vk-arrow {
+  font-size: 16px;
+  min-width: 50px;
+}
+
+/* 全屏模式下虚拟按键位置调整 */
+.terminal.fullscreen .virtual-keys {
+  padding: 10px 16px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}

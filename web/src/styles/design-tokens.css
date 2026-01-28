@@ -1,0 +1,232 @@
+/**
+ * 设计令牌 - 从 .pen 文件精确提取
+ * 自动生成自: myblog.pen
+ * 生成时间: 2026-01-28
+ */
+
+/* ============================================
+   1. 颜色系统 - 精确匹配设计文件
+   ============================================ */
+:root {
+  /* 背景色 - 渐变基色 */
+  --bg-dark: #0A0A12;
+  --bg-dark-mid: #0D1117;
+  --bg-card: #12121A;
+  --bg-surface: #1A1A2E;
+  --bg-code: #0D0D15;
+  
+  /* 主色调 - 青色 */
+  --accent-cyan: #00F5D4;
+  --accent-cyan-80: #00F5D4CC;     /* 80% 透明度 */
+  --accent-cyan-50: #00F5D480;     /* 50% 透明度 */
+  --accent-cyan-40: #00F5D466;     /* 40% 透明度 */
+  --accent-cyan-30: #00F5D44D;     /* 30% 透明度 */
+  --accent-cyan-20: #00F5D433;     /* 20% 透明度 */
+  --accent-cyan-15: #00F5D426;     /* 15% 透明度 */
+  --accent-cyan-10: #00F5D41A;     /* 10% 透明度 */
+  
+  /* 辅助色 - 紫色 */
+  --accent-purple: #A78BFA;
+  --accent-purple-20: #A78BFA33;
+  --accent-purple-15: #A78BFA26;
+  --accent-purple-10: #A78BFA1A;
+  
+  /* 辅助色 - 红/粉色 */
+  --accent-red: #FF6B6B;
+  --accent-red-50: #FF6B6B80;
+  --accent-red-40: #FF6B6B66;
+  --accent-red-20: #FF6B6B33;
+  --accent-red-15: #FF6B6B26;
+  
+  /* 辅助色 - 橙色 */
+  --accent-orange: #F59E0B;
+  --accent-orange-50: #F59E0B80;
+  --accent-orange-20: #F59E0B33;
+  --accent-orange-15: #F59E0B26;
+  --accent-orange-10: #F59E0B1A;
+  
+  /* 辅助色 - 青绿色 */
+  --accent-teal: #4ECDC4;
+  --accent-teal-50: #4ECDC480;
+  --accent-teal-40: #4ECDC466;
+  --accent-teal-15: #4ECDC426;
+  
+  /* 渐变紫 */
+  --accent-violet: #7B61FF;
+  --accent-violet-20: #7B61FF33;
+  --accent-violet-15: #7B61FF26;
+  
+  /* 文字颜色 */
+  --text-primary: #FFFFFF;
+  --text-secondary: #C0C0D0;
+  --text-muted: #8B8B9E;
+  --text-dim: #666680;
+  
+  /* 边框颜色 */
+  --border-default: #333340;
+  --border-light: rgba(255, 255, 255, 0.1);
+  --border-lighter: rgba(255, 255, 255, 0.06);
+  
+  /* ============================================
+     2. 字体系统 - 精确匹配设计文件
+     ============================================ */
+  --font-display: 'Oswald', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  
+  /* 字号 */
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 20px;
+  --text-3xl: 24px;
+  --text-4xl: 28px;
+  --text-5xl: 36px;
+  --text-6xl: 48px;
+  --text-7xl: 72px;
+  
+  /* 字重 */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* 行高 */
+  --leading-tight: 1.1;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.8;
+  --leading-loose: 1.9;
+  
+  /* 字间距 */
+  --tracking-normal: 0;
+  --tracking-wide: 1px;
+  --tracking-wider: 2px;
+  
+  /* ============================================
+     3. 间距系统 - 精确匹配设计文件
+     ============================================ */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 14px;
+  --space-7: 16px;
+  --space-8: 20px;
+  --space-9: 24px;
+  --space-10: 28px;
+  --space-11: 32px;
+  --space-12: 40px;
+  --space-13: 60px;
+  --space-14: 80px;
+  
+  /* 常用 padding 组合 */
+  --padding-btn-sm: 8px 16px;
+  --padding-btn-md: 10px 20px;
+  --padding-btn-lg: 12px 24px;
+  --padding-btn-xl: 14px 28px;
+  --padding-btn-2xl: 16px 32px;
+  --padding-card: 24px;
+  --padding-section: 40px 80px;
+  --padding-nav: 0 80px;
+  --padding-article: 40px 280px;
+  
+  /* Gap */
+  --gap-xs: 4px;
+  --gap-sm: 6px;
+  --gap-md: 8px;
+  --gap-lg: 10px;
+  --gap-xl: 12px;
+  --gap-2xl: 16px;
+  --gap-3xl: 20px;
+  --gap-4xl: 24px;
+  --gap-5xl: 28px;
+  --gap-6xl: 32px;
+  --gap-7xl: 40px;
+  --gap-8xl: 80px;
+  
+  /* ============================================
+     4. 阴影系统 - 精确匹配设计文件
+     ============================================ */
+  --shadow-glow-cyan: 0 0 24px var(--accent-cyan-50);
+  --shadow-glow-cyan-sm: 0 0 8px var(--accent-cyan-80);
+  --shadow-glow-cyan-lg: 0 0 60px var(--accent-cyan-20);
+  --shadow-glow-purple: 0 0 40px var(--accent-purple-10);
+  --shadow-glow-violet: 0 0 120px var(--accent-violet-15);
+  --shadow-glow-orange: 0 0 40px var(--accent-orange-10);
+  --shadow-glow-card: 0 0 40px var(--accent-cyan-10);
+  --shadow-avatar: 0 0 16px var(--accent-cyan-30);
+  
+  /* ============================================
+     5. 尺寸系统
+     ============================================ */
+  --nav-height: 80px;
+  --icon-sm: 16px;
+  --icon-md: 18px;
+  --icon-lg: 24px;
+  --avatar-sm: 40px;
+  --avatar-md: 64px;
+  --page-max-width: 1440px;
+  --content-max-width: 880px;
+  
+  /* ============================================
+     6. 过渡动画
+     ============================================ */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.35s ease;
+}
+
+/* ============================================
+   7. 渐变背景 - 精确匹配设计文件
+   ============================================ */
+.bg-gradient-page {
+  background: linear-gradient(
+    180deg,
+    var(--bg-dark) 0%,
+    var(--bg-dark-mid) 50%,
+    var(--bg-dark) 100%
+  );
+}
+
+.bg-gradient-hero {
+  background: linear-gradient(
+    90deg,
+    var(--accent-cyan) 0%,
+    var(--accent-violet) 100%
+  );
+}
+
+.bg-gradient-card-cyan {
+  background: linear-gradient(
+    135deg,
+    var(--accent-cyan-20) 0%,
+    var(--accent-violet-20) 100%
+  );
+}
+
+.bg-gradient-card-purple {
+  background: linear-gradient(
+    135deg,
+    var(--accent-purple-20) 0%,
+    var(--accent-red-20) 100%
+  );
+}
+
+.bg-gradient-card-orange {
+  background: linear-gradient(
+    135deg,
+    var(--accent-orange-20) 0%,
+    var(--accent-teal-15) 100%
+  );
+}
+
+/* 渐变文字 */
+.text-gradient-primary {
+  background: linear-gradient(90deg, var(--accent-cyan) 0%, var(--accent-violet) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

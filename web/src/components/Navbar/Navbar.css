@@ -1,0 +1,113 @@
+/* ============================================
+   导航栏样式 - 精确匹配 myblog.pen 设计
+   ============================================ */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--nav-height);
+  background: rgba(10, 10, 18, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--accent-cyan-20);
+}
+
+.navbar-container {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: var(--padding-nav);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Logo 区域 */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+  text-decoration: none;
+}
+
+.logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--accent-cyan-15);
+  border: 1px solid var(--accent-cyan-50);
+  border-radius: 8px;
+  color: var(--accent-cyan);
+  font-size: var(--text-xl);
+}
+
+.logo-text {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-primary);
+}
+
+/* 导航链接 */
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-7xl);
+}
+
+.nav-link {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: var(--font-normal);
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--transition-normal);
+  position: relative;
+  padding: var(--space-3) 0;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+}
+
+.nav-link.active {
+  color: var(--accent-cyan);
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent-cyan);
+  border-radius: 1px;
+  box-shadow: 0 0 8px var(--accent-cyan-80);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .navbar {
+    height: 64px;
+  }
+  
+  .navbar-container {
+    padding: 0 var(--space-8);
+  }
+
+  .logo-text {
+    display: none;
+  }
+
+  .navbar-links {
+    gap: var(--gap-3xl);
+  }
+
+  .nav-link {
+    font-size: var(--text-sm);
+  }
+}

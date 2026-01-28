@@ -1,0 +1,396 @@
+/**
+ * 全局基础样式
+ * 使用 design-tokens.css 中的设计令牌
+ */
+
+/* 导入设计令牌 */
+@import './design-tokens.css';
+
+/* ============================================
+   1. 重置样式
+   ============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================
+   2. 基础样式
+   ============================================ */
+html {
+  font-size: var(--text-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-mono);
+  font-weight: var(--font-normal);
+  color: var(--text-primary);
+  background-color: var(--bg-dark);
+  line-height: var(--leading-normal);
+  overflow-x: hidden;
+}
+
+/* ============================================
+   3. 页面容器
+   ============================================ */
+.page {
+  min-height: 100vh;
+  background: linear-gradient(
+    180deg,
+    var(--bg-dark) 0%,
+    var(--bg-dark-mid) 50%,
+    var(--bg-dark) 100%
+  );
+  display: flex;
+  flex-direction: column;
+}
+
+.page-content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: var(--padding-section);
+}
+
+/* ============================================
+   4. 排版样式 - 精确匹配 .pen 文件
+   ============================================ */
+
+/* 显示字体 (Oswald) */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* 等宽字体 (JetBrains Mono) */
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* 标题样式 */
+h1, .h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-7xl);
+  font-weight: var(--font-bold);
+  letter-spacing: var(--tracking-wider);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+}
+
+h2, .h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-6xl);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-wide);
+  line-height: var(--leading-tight);
+}
+
+h3, .h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-wide);
+}
+
+h4, .h4 {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-semibold);
+}
+
+h5, .h5 {
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  font-weight: var(--font-medium);
+}
+
+p, .body {
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  font-weight: var(--font-normal);
+  line-height: var(--leading-loose);
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   5. 链接样式
+   ============================================ */
+a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent-cyan-80);
+}
+
+/* ============================================
+   6. 表单元素
+   ============================================ */
+input,
+textarea,
+select,
+button {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* 输入框 - 精确匹配设计 */
+.input {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 6px;
+  padding: var(--space-4) var(--space-7);
+  height: 44px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input:hover {
+  border-color: var(--accent-cyan-50);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 2px var(--accent-cyan-20);
+}
+
+/* 搜索框 - 精确匹配设计 */
+.search-input {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 6px;
+  padding: var(--space-3) var(--space-7);
+  padding-left: 44px;
+  height: 44px;
+  width: 280px;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   7. 按钮样式 - 精确匹配设计
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-md);
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  border: none;
+}
+
+/* 主要按钮 - 渐变青色 */
+.btn-primary {
+  background: var(--accent-cyan);
+  color: var(--bg-dark);
+  padding: var(--padding-btn-xl);
+  box-shadow: var(--shadow-glow-cyan);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 32px var(--accent-cyan-50);
+  transform: translateY(-2px);
+}
+
+/* 幽灵按钮 */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--accent-cyan-50);
+  color: var(--accent-cyan);
+  padding: var(--padding-btn-xl);
+}
+
+.btn-ghost:hover {
+  background: var(--accent-cyan-10);
+  border-color: var(--accent-cyan);
+}
+
+/* 次要按钮 */
+.btn-secondary {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  padding: var(--padding-btn-md);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent-cyan-50);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   8. 卡片样式 - 精确匹配设计
+   ============================================ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 12px;
+  padding: var(--padding-card);
+  box-shadow: var(--shadow-glow-card);
+  transition: all var(--transition-normal);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 48px var(--accent-cyan-15);
+  border-color: var(--accent-cyan-50);
+}
+
+/* ============================================
+   9. 标签/徽章 - 精确匹配设计
+   ============================================ */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--padding-btn-sm);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  transition: background-color var(--transition-fast);
+}
+
+/* 技术标签颜色变体 */
+.tag-cyan {
+  background: var(--accent-cyan-15);
+  color: var(--accent-cyan);
+}
+
+.tag-purple {
+  background: var(--accent-purple-15);
+  color: var(--accent-purple);
+}
+
+.tag-red {
+  background: var(--accent-red-15);
+  color: var(--accent-red);
+}
+
+.tag-orange {
+  background: var(--accent-orange-15);
+  color: var(--accent-orange);
+}
+
+.tag-teal {
+  background: var(--accent-teal-15);
+  color: var(--accent-teal);
+}
+
+/* ============================================
+   10. 代码窗口 - 精确匹配设计
+   ============================================ */
+.code-window {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-glow-cyan-lg);
+}
+
+.code-window-header {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+  padding: var(--space-5) var(--space-7);
+  background: var(--bg-code);
+  border-bottom: 1px solid var(--border-lighter);
+}
+
+.code-window-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.code-window-dot.red { background: var(--accent-red); }
+.code-window-dot.orange { background: var(--accent-orange); }
+.code-window-dot.green { background: #4ADE80; }
+
+.code-window-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.code-window-content {
+  padding: var(--space-8);
+  background: var(--bg-code);
+}
+
+pre, code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+
+.code-keyword { color: var(--accent-purple); }
+.code-string { color: #4ADE80; }
+.code-function { color: var(--accent-cyan); }
+.code-comment { color: var(--text-dim); }
+.code-number { color: var(--accent-orange); }
+
+/* ============================================
+   11. 响应式断点
+   ============================================ */
+@media (max-width: 1280px) {
+  :root {
+    --padding-section: 32px 60px;
+    --padding-article: 32px 120px;
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --text-7xl: 56px;
+    --text-6xl: 40px;
+    --padding-section: 24px 40px;
+    --padding-article: 24px 60px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --text-7xl: 44px;
+    --text-6xl: 32px;
+    --text-5xl: 28px;
+    --nav-height: 64px;
+    --padding-section: 20px 20px;
+    --padding-nav: 0 20px;
+    --padding-article: 20px 20px;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --text-7xl: 36px;
+    --text-6xl: 28px;
+    --text-5xl: 24px;
+    --padding-btn-xl: 12px 20px;
+    --padding-btn-2xl: 14px 24px;
+  }
+}
