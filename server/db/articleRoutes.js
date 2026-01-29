@@ -1,6 +1,20 @@
 import express from 'express';
 import db from './database.js';
 
+// 验证用户邮箱是否在白名单中
+function isEmailWhitelisted(email) {
+  if (!email) return false;
+
+  const ALLOWED_EMAILS = process.env.ALLOWED_EMAILS
+    ? process.env.ALLOWED_EMAILS.split(',').map(e => e.trim())
+    : [];
+
+  // 如果白名单为空，允许所有邮箱
+  if (ALLOWED_EMAILS.length === 0) return true;
+
+  return ALLOWED_EMAILS.includes(email);
+}
+
 const router = express.Router();
 
 // ========== 分类数据 ==========
@@ -198,13 +212,20 @@ router.post('/articles', (req, res) => {
 router.put('/articles/:id', (req, res) => {
   try {
     const { id } = req.params;
+    const { email } = req.body; // 从请求体获取邮箱
+
+    // 验证邮箱是否在白名单中
+    if (!isEmailWhitelisted(email)) {
+      return res.status(403).json({ success: false, error: '只有白名单邮箱的用户可以编辑文章' });
+    }
+
     const { title, description, content, category, tags, visibility, status } = req.body;
-    
+
     const existing = db.prepare('SELECT * FROM articles WHERE id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: '文章不存在' });
     }
-    
+
     const cat = categories.find(c => c.id === category);
     const color = cat ? cat.color : existing.color;
     

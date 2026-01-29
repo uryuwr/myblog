@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Eye, Heart, Calendar, Share2, Bookmark,
-  Copy, Check, Trash2
+  Copy, Check, Trash2, Edit
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
@@ -197,6 +197,12 @@ export default function BlogDetail() {
               <ArrowLeft size={18} />
               返回列表
             </Link>
+            {user && user.email && (
+              <Link to={`/write?id=${id}`} className="edit-article-btn">
+                <Edit size={16} />
+                编辑文章
+              </Link>
+            )}
             <button className="delete-article-btn" onClick={handleDeleteArticle}>
               <Trash2 size={16} />
               删除文章

@@ -31,6 +31,37 @@
   margin-bottom: var(--space-9);
 }
 
+.header-actions .edit-article-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  height: 36px;
+  border: 1px solid var(--accent-purple);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--accent-purple);
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.header-actions .edit-article-btn:hover {
+  background: rgba(167, 139, 250, 0.1);
+  transform: translateY(-1px);
+}
+
+.header-actions .edit-article-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.header-actions .delete-article-btn {
+  margin-left: auto;
+}
+
 .back-btn {
   display: inline-flex;
   align-items: center;

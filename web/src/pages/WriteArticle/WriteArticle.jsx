@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Bold, Italic, Code, Link, Image, List, Quote,
   Upload, ChevronDown, Eye
@@ -23,6 +23,9 @@ const categories = [
 export default function WriteArticle() {
   const navigate = useNavigate();
   const { isAuthenticated, user, token, logout } = useAuth();
+  const [searchParams] = useSearchParams();
+  const articleId = searchParams.get('id');
+  const [isEditMode, setIsEditMode] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -37,6 +40,25 @@ export default function WriteArticle() {
   useEffect(() => {
     api.getDrafts().then(setDrafts);
   }, []);
+
+  // 加载文章数据（编辑模式）
+  useEffect(() => {
+    if (articleId && token) {
+      api.getArticle(articleId).then(article => {
+        if (article) {
+          setTitle(article.title);
+          setContent(article.content);
+          setSelectedCategory(article.category);
+          setTags(article.tags || ['React', '性能优化']);
+          setVisibility(article.visibility);
+          setIsEditMode(true);
+        }
+      }).catch(error => {
+        console.error('加载文章失败:', error);
+        navigate('/blog');
+      });
+    }
+  }, [articleId, token]);
 
   const toolbarActions = [
     { icon: Bold, label: '加粗', action: () => insertText('**', '**') },
@@ -83,14 +105,30 @@ export default function WriteArticle() {
     }
 
     setSaving(true);
-    await api.saveArticle({
-      title,
-      content,
-      tags,
-      category: selectedCategory,
-      visibility,
-      status: 'published'
-    });
+
+    if (isEditMode && articleId) {
+      // 编辑模式：更新现有文章
+      await api.updateArticle(articleId, {
+        title,
+        content,
+        tags,
+        category: selectedCategory,
+        visibility,
+        status: 'published',
+        email: user.email
+      });
+    } else {
+      // 新建模式：创建新文章
+      await api.saveArticle({
+        title,
+        content,
+        tags,
+        category: selectedCategory,
+        visibility,
+        status: 'published'
+      });
+    }
+
     setSaving(false);
     navigate('/blog');
   };
@@ -133,7 +171,9 @@ export default function WriteArticle() {
               <ArrowLeft size={18} />
               返回
             </button>
-            <h1 className="page-title">✍️ 写文章</h1>
+            <h1 className="page-title">
+              {isEditMode ? '✏️ 编辑文章' : '✍️ 写文章'}
+            </h1>
           </div>
         </div>
         
@@ -180,7 +220,7 @@ export default function WriteArticle() {
             预览
           </button>
           <button className="action-btn publish" onClick={handlePublish} disabled={saving}>
-            {saving ? '发布中...' : '发布文章'}
+            {saving ? '发布中...' : (isEditMode ? '更新文章' : '发布文章')}
           </button>
           {user && <UserInfo variant="default" />}
         </div>
