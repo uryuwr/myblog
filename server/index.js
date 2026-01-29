@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -18,11 +19,11 @@ const JWT_EXPIRES_IN = '7d'; // Token 有效期 7 天
 const CODE_EXPIRES_IN = 5 * 60 * 1000; // 验证码 5 分钟有效
 const CODE_RESEND_INTERVAL = 60 * 1000; // 重发间隔 60 秒
 
-// 允许登录的邮箱白名单（留空表示允许所有邮箱）
-const ALLOWED_EMAILS = [
-   '289561901@qq.com',
-  // 'user@example.com'
-];
+// 允许登录的邮箱白名单（从环境变量读取，多个邮箱用逗号分隔，留空表示允许所有邮箱）
+// 示例: ALLOWED_EMAILS=admin@example.com,user@example.com
+const ALLOWED_EMAILS = process.env.ALLOWED_EMAILS 
+  ? process.env.ALLOWED_EMAILS.split(',').map(email => email.trim())
+  : [];
 
 // 邮件 SMTP 配置（请修改为你的邮箱配置）
 const SMTP_CONFIG = {

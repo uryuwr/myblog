@@ -13,7 +13,7 @@ const Terminal = ({ onActivityChange }) => {
   const { isConnected, authStatus, sendMessage, addMessageHandler, wsRef } = useTerminal();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [mobileInput, setMobileInput] = useState('');
+  const [imeInput, setImeInput] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const activityTimeoutRef = useRef(null);
@@ -22,7 +22,7 @@ const Terminal = ({ onActivityChange }) => {
   const terminalContainerRef = useRef(null);
   const xtermRef = useRef(null);
   const fitAddonRef = useRef(null);
-  const mobileInputRef = useRef(null);
+  const imeInputRef = useRef(null);
 
   // 检测是否为移动设备
   useEffect(() => {
@@ -314,32 +314,80 @@ const Terminal = ({ onActivityChange }) => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen]);
 
-  // 移动端输入处理
-  const handleMobileInput = useCallback((e) => {
+  // IME 输入处理（中文等需要组合的输入）
+  const handleImeInput = useCallback((e) => {
     const value = e.target.value;
     
+    // 组合输入中，只更新状态不发送
     if (isComposing) {
-      setMobileInput(value);
+      setImeInput(value);
       return;
     }
     
-    if (value.length > mobileInput.length) {
-      const newChar = value.slice(mobileInput.length);
+    // 非组合输入时，发送新增的字符
+    if (value.length > imeInput.length) {
+      const newChar = value.slice(imeInput.length);
       sendMessage({ type: 'input', data: newChar });
     }
     
-    setMobileInput(value);
-  }, [mobileInput, isComposing, sendMessage]);
+    setImeInput(value);
+  }, [imeInput, isComposing, sendMessage]);
 
-  const handleMobileKeyDown = useCallback((e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      sendMessage({ type: 'input', data: '\r' });
-      setMobileInput('');
-    } else if (e.key === 'Backspace' && mobileInput.length === 0) {
-      sendMessage({ type: 'input', data: '\x7f' });
+  const handleImeKeyDown = useCallback((e) => {
+    // 组合输入中不处理按键
+    if (isComposing) return;
+    
+    const key = e.key;
+    
+    // 处理特殊按键
+    switch (key) {
+      case 'Enter':
+        e.preventDefault();
+        sendMessage({ type: 'input', data: '\r' });
+        setImeInput('');
+        break;
+      case 'Backspace':
+        if (imeInput.length === 0) {
+          e.preventDefault();
+          sendMessage({ type: 'input', data: '\x7f' });
+        }
+        break;
+      case 'Tab':
+        e.preventDefault();
+        sendMessage({ type: 'input', data: e.shiftKey ? '\x1b[Z' : '\t' });
+        break;
+      case 'Escape':
+        e.preventDefault();
+        sendMessage({ type: 'input', data: '\x1b' });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        sendMessage({ type: 'input', data: '\x1b[A' });
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        sendMessage({ type: 'input', data: '\x1b[B' });
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        sendMessage({ type: 'input', data: '\x1b[D' });
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        sendMessage({ type: 'input', data: '\x1b[C' });
+        break;
+      default:
+        // 处理 Ctrl 组合键
+        if (e.ctrlKey && key.length === 1) {
+          e.preventDefault();
+          const char = key.toLowerCase();
+          const ctrlCode = char.charCodeAt(0) - 96; // a=1, b=2, c=3...
+          if (ctrlCode >= 1 && ctrlCode <= 26) {
+            sendMessage({ type: 'input', data: String.fromCharCode(ctrlCode) });
+          }
+        }
     }
-  }, [mobileInput, sendMessage]);
+  }, [imeInput, isComposing, sendMessage]);
 
   const handleCompositionStart = () => setIsComposing(true);
   
@@ -349,7 +397,7 @@ const Terminal = ({ onActivityChange }) => {
     if (composedText) {
       sendMessage({ type: 'input', data: composedText });
     }
-    setMobileInput('');
+    setImeInput('');
   }, [sendMessage]);
 
   // 发送特殊按键
@@ -357,9 +405,11 @@ const Terminal = ({ onActivityChange }) => {
     const keyMap = {
       'esc': '\x1b',
       'tab': '\t',
+      'shift-tab': '\x1b[Z',  // Shift+Tab
+      'enter': '\r',
       'ctrl-c': '\x03',
-      'ctrl-d': '\x04',
-      'ctrl-z': '\x1a',
+      'ctrl-t': '\x14',
+      'ctrl-u': '\x15',
       'ctrl-l': '\x0c',
       'up': '\x1b[A',
       'down': '\x1b[B',
@@ -374,15 +424,15 @@ const Terminal = ({ onActivityChange }) => {
 
   const toggleFullscreen = () => setIsFullscreen(prev => !prev);
 
-  // 点击终端区域 - 移动端不自动弹出键盘，需要双击
+  // 点击终端区域
   const focusTerminal = useCallback(() => {
-    // 移动端不在单击时弹出键盘，只聚焦 xterm
+    // 移动端不在单击时弹出键盘，等待双击
     if (isMobile) {
-      // 不调用 focus，等待双击才唤起键盘
       return;
     }
-    if (xtermRef.current) {
-      xtermRef.current.focus();
+    // 桌面端聚焦到 IME 输入框以正确处理中文输入
+    if (imeInputRef.current) {
+      imeInputRef.current.focus();
     }
   }, [isMobile]);
 
@@ -404,8 +454,8 @@ const Terminal = ({ onActivityChange }) => {
     
     if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
       // 双击，唤起键盘
-      if (mobileInputRef.current) {
-        mobileInputRef.current.focus();
+      if (imeInputRef.current) {
+        imeInputRef.current.focus();
       }
       lastTapRef.current = 0; // 重置
     } else {
@@ -454,24 +504,22 @@ const Terminal = ({ onActivityChange }) => {
           onTouchEnd={handleDoubleTap}
         />
         
-        {/* 移动端输入框 */}
-        {isMobile && (
-          <input
-            ref={mobileInputRef}
-            type="text"
-            className="mobile-input"
-            value={mobileInput}
-            onChange={handleMobileInput}
-            onKeyDown={handleMobileKeyDown}
-            onCompositionStart={handleCompositionStart}
-            onCompositionEnd={handleCompositionEnd}
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck="false"
-            aria-label="Terminal input"
-          />
-        )}
+        {/* IME 输入框 - 用于正确处理中文等输入法输入（移动端和桌面端通用） */}
+        <input
+          ref={imeInputRef}
+          type="text"
+          className="ime-input"
+          value={imeInput}
+          onChange={handleImeInput}
+          onKeyDown={handleImeKeyDown}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          aria-label="Terminal input"
+        />
       </div>
 
       {/* 未登录提示 */}
@@ -513,9 +561,13 @@ const Terminal = ({ onActivityChange }) => {
           <div className="virtual-keys-row">
             <button className="vk-btn" onClick={() => sendSpecialKey('esc')}>Esc</button>
             <button className="vk-btn" onClick={() => sendSpecialKey('tab')}>Tab</button>
+            <button className="vk-btn" onClick={() => sendSpecialKey('shift-tab')}>⇧Tab</button>
+            <button className="vk-btn vk-enter" onClick={() => sendSpecialKey('enter')}>Enter</button>
+          </div>
+          <div className="virtual-keys-row">
             <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-c')}>^C</button>
-            <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-d')}>^D</button>
-            <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-z')}>^Z</button>
+            <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-t')}>^T</button>
+            <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-u')}>^U</button>
             <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-l')}>^L</button>
           </div>
           <div className="virtual-keys-row">

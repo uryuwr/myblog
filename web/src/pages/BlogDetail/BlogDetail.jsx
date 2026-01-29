@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, Eye, Heart, Calendar, Share2, Bookmark, 
+import {
+  ArrowLeft, Eye, Heart, Calendar, Share2, Bookmark,
   Copy, Check, Trash2
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
+import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
 import { api } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import './BlogDetail.css';
@@ -27,6 +28,9 @@ export default function BlogDetail() {
   const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showDeleteArticleDialog, setShowDeleteArticleDialog] = useState(false);
+  const [showDeleteCommentDialog, setShowDeleteCommentDialog] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -52,26 +56,34 @@ export default function BlogDetail() {
 
   // 删除文章
   const handleDeleteArticle = async () => {
-    if (!window.confirm('确定要删除这篇文章吗？此操作不可撤销。')) return;
-    
+    setShowDeleteArticleDialog(true);
+  };
+
+  const confirmDeleteArticle = async () => {
     try {
       await api.deleteArticle(id);
-      alert('文章已删除');
+      setShowDeleteArticleDialog(false);
       navigate('/blog');
     } catch (error) {
-      alert('删除失败：' + error.message);
+      setShowDeleteArticleDialog(false);
     }
   };
 
   // 删除评论
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm('确定要删除这条评论吗？')) return;
-    
+  const handleDeleteComment = (commentId) => {
+    setCommentToDelete(commentId);
+    setShowDeleteCommentDialog(true);
+  };
+
+  const confirmDeleteComment = async () => {
     try {
-      await api.deleteComment(commentId);
-      setComments(comments.filter(c => c.id !== commentId));
+      await api.deleteComment(commentToDelete);
+      setComments(comments.filter(c => c.id !== commentToDelete));
+      setShowDeleteCommentDialog(false);
+      setCommentToDelete(null);
     } catch (error) {
-      alert('删除失败：' + error.message);
+      setShowDeleteCommentDialog(false);
+      setCommentToDelete(null);
     }
   };
 
@@ -312,6 +324,33 @@ export default function BlogDetail() {
           </div>
         </section>
       </main>
+
+      {/* 删除文章确认对话框 */}
+      <ConfirmDialog
+        isOpen={showDeleteArticleDialog}
+        title="删除文章"
+        message="确定要删除这篇文章吗？此操作不可撤销。"
+        onConfirm={confirmDeleteArticle}
+        onCancel={() => setShowDeleteArticleDialog(false)}
+        confirmText="删除"
+        cancelText="取消"
+        type="danger"
+      />
+
+      {/* 删除评论确认对话框 */}
+      <ConfirmDialog
+        isOpen={showDeleteCommentDialog}
+        title="删除评论"
+        message="确定要删除这条评论吗？"
+        onConfirm={confirmDeleteComment}
+        onCancel={() => {
+          setShowDeleteCommentDialog(false);
+          setCommentToDelete(null);
+        }}
+        confirmText="删除"
+        cancelText="取消"
+        type="danger"
+      />
     </div>
   );
 }

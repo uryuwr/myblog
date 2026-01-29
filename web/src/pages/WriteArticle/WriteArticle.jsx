@@ -72,30 +72,26 @@ export default function WriteArticle() {
     setSaving(true);
     await api.saveArticle({ title, content, tags, category: selectedCategory, status: 'draft' });
     setSaving(false);
-    alert('草稿已保存！');
   };
 
   const handlePublish = async () => {
     if (!title.trim()) {
-      alert('请输入文章标题');
       return;
     }
     if (!content.trim()) {
-      alert('请输入文章内容');
       return;
     }
 
     setSaving(true);
-    await api.saveArticle({ 
-      title, 
-      content, 
-      tags, 
+    await api.saveArticle({
+      title,
+      content,
+      tags,
       category: selectedCategory,
       visibility,
       status: 'published'
     });
     setSaving(false);
-    alert('文章发布成功！');
     navigate('/blog');
   };
 

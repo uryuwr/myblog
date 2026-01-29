@@ -359,33 +359,33 @@
   }
 }
 
-/* 移动端隐藏输入框 - 用于捕获虚拟键盘 */
-.mobile-input {
+/* IME 输入框 - 用于正确处理中文等输入法输入 */
+.ime-input {
   position: absolute;
-  /* 放在可见区域外，避免输入时视口移动 */
-  top: 50%;
-  left: 0;
+  /* 固定在终端左下角，避免候选框位置跳动 */
+  bottom: 10px;
+  left: 10px;
   width: 1px;
   height: 1px;
-  opacity: 0;
+  padding: 0;
+  margin: 0;
+  opacity: 0.01; /* 几乎透明但保持可聚焦 */
   background: transparent;
   border: none;
   outline: none;
   color: transparent;
   caret-color: transparent;
   font-size: 16px; /* 防止 iOS 自动缩放 */
-  z-index: -1;
+  z-index: 1;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  /* 防止输入时页面抖动 */
-  transform: translateY(-50%);
 }
 
-.mobile-input:focus {
+.ime-input:focus {
   outline: none;
 }
 
-/* 移动端时让 terminal-content 相对定位 */
+/* 终端内容区域需要相对定位 */
 .terminal-content {
   position: relative;
 }
@@ -440,6 +440,17 @@
 
 .vk-btn.vk-ctrl:active {
   background: rgba(255, 107, 107, 0.35);
+}
+
+.vk-btn.vk-enter {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: #4ade80;
+  min-width: 60px;
+}
+
+.vk-btn.vk-enter:active {
+  background: rgba(74, 222, 128, 0.35);
 }
 
 .vk-btn.vk-arrow {
