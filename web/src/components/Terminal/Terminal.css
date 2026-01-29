@@ -42,6 +42,9 @@
   z-index: 9999;
   box-shadow: none;
   border: none;
+  /* 允许 JavaScript 完全控制触摸事件 */
+  touch-action: none;
+  overflow: hidden;
 }
 
 /* 窗口栏 */
@@ -59,6 +62,47 @@
 .terminal.fullscreen .terminal-bar {
   height: 48px;
   padding: 0 var(--space-9);
+}
+
+/* Fullscreen 模式下的终端内容 */
+.terminal.fullscreen .terminal-content {
+  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
+}
+
+/* Fullscreen 模式下的 xterm 容器 */
+.terminal.fullscreen .xterm-container {
+  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
+}
+
+/* Fullscreen 模式下的 xterm viewport - 关键滚动区域 */
+.terminal.fullscreen .xterm-container .xterm-viewport {
+  /* 使用原生滚动，默认速度和动量 */
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+
+  /* 让滚动条可以触摸 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 全平台显示滚动条，让用户可以触摸滚动 */
+.terminal.fullscreen .xterm-container .xterm-viewport::-webkit-scrollbar {
+  width: 12px !important;
+  opacity: 0.8;
+}
+
+.terminal.fullscreen .xterm-container .xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgba(0, 245, 212, 0.6);
+  border-radius: 6px;
+  min-height: 40px;
+}
+
+.terminal.fullscreen .xterm-container .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .terminal-dots {
@@ -166,6 +210,8 @@
   flex: 1;
   width: 100%;
   height: 100%;
+  /* 非全屏模式默认触摸行为 */
+  touch-action: none;
 }
 
 .xterm-container .xterm {
@@ -174,6 +220,31 @@
 
 .xterm-container .xterm-viewport {
   overflow-y: auto !important;
+  /* 桌面端显示滚动条 */
+}
+
+/* 非全屏模式下的滚动条样式 */
+.xterm-container .xterm-viewport::-webkit-scrollbar {
+  width: 4px;
+}
+
+.xterm-container .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.xterm-container .xterm-viewport::-webkit-scrollbar-thumb {
+  background: var(--accent-cyan-40);
+  border-radius: 100px;
+}
+
+.xterm-container .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+/* Firefox 滚动条 */
+.xterm-container .xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-cyan-40) transparent;
 }
 
 /* 移动端禁止 xterm 内部元素获取焦点 */
@@ -184,7 +255,6 @@
     opacity: 0 !important;
     pointer-events: none !important;
   }
-}
 }
 
 /* ============================================
@@ -343,19 +413,39 @@
   .terminal {
     max-width: 100%;
     height: 300px;
-    /* 移动端终端容器触摸优化 */
-    touch-action: none; /* 完全由 JS 控制触摸 */
+    /* 移动端非全屏模式完全禁用触摸滚动 */
+    touch-action: none;
   }
-  
+
   .terminal.fullscreen .terminal-bar {
     height: 44px;
     padding: 0 var(--space-5);
   }
-  
-  /* 终端内容区域启用触摸滚动 */
-  .terminal-content {
-    touch-action: pan-y;
+
+  /* 全屏模式下启用触摸滚动 */
+  .terminal.fullscreen .xterm-container {
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain; /* 防止 iOS Safari 橡皮筋效果 */
+  }
+
+  .terminal.fullscreen .xterm-viewport {
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  /* 移动端全屏显示滚动条 */
+  .terminal.fullscreen .xterm-container .xterm-viewport::-webkit-scrollbar {
+    width: 16px !important;
+    opacity: 0.9;
+  }
+
+  .terminal.fullscreen .xterm-container .xterm-viewport::-webkit-scrollbar-thumb {
+    background: rgba(0, 245, 212, 0.7);
+    border-radius: 8px;
+    min-height: 50px;
   }
 }
 
@@ -462,4 +552,96 @@
 .terminal.fullscreen .virtual-keys {
   padding: 10px 16px;
   padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+/* ========== 语音输入按钮 ========== */
+.voice-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-violet) 100%);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 4px 15px rgba(0, 217, 255, 0.3),
+    0 0 20px rgba(0, 217, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+}
+
+.voice-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 
+    0 6px 20px rgba(0, 217, 255, 0.4),
+    0 0 30px rgba(0, 217, 255, 0.3);
+}
+
+.voice-btn:active {
+  transform: scale(0.95);
+}
+
+.voice-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* 录音中状态 */
+.voice-btn.recording {
+  background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+  animation: pulse-recording 1.5s ease-in-out infinite;
+  box-shadow: 
+    0 4px 15px rgba(239, 68, 68, 0.4),
+    0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+@keyframes pulse-recording {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 
+      0 4px 15px rgba(239, 68, 68, 0.4),
+      0 0 20px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 
+      0 6px 25px rgba(239, 68, 68, 0.5),
+      0 0 40px rgba(239, 68, 68, 0.4);
+  }
+}
+
+/* 处理中状态 */
+.voice-btn.processing {
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  box-shadow: 
+    0 4px 15px rgba(245, 158, 11, 0.4),
+    0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+/* 移动端虚拟按键存在时，语音按钮位置调整 */
+.terminal .voice-btn {
+  bottom: 16px;
+}
+
+/* 当有虚拟按键时，语音按钮移到虚拟按键上方 */
+.terminal:has(.virtual-keys) .voice-btn {
+  bottom: calc(130px + 16px); /* 虚拟按键高度 + 间距 */
+}
+
+/* 全屏模式下的语音按钮 */
+.terminal.fullscreen .voice-btn {
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+}
+
+.terminal.fullscreen:has(.virtual-keys) .voice-btn {
+  bottom: calc(140px + max(20px, env(safe-area-inset-bottom)));
 }

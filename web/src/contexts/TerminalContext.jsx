@@ -5,9 +5,10 @@ const TerminalContext = createContext(null);
 
 // 动态获取 WebSocket 地址
 const getWsUrl = () => {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = window.location.hostname;
-  return `${protocol}//${host}:3001`;
+  // WebSocket 直接连接后端（不通过 Vite 代理，避免 Node.js 22 兼容问题）
+  const hostname = window.location.hostname;
+  // 后端始终是 HTTP/WS（未配置 HTTPS）
+  return `ws://${hostname}:3001`;
 };
 
 // 生成唯一客户端 ID（用于区分不同设备/标签页）

@@ -10,7 +10,10 @@
       "mcp__chrome-devtools__take_snapshot",
       "mcp__chrome-devtools__click",
       "mcp__chrome-devtools__fill",
-      "mcp__chrome-devtools__handle_dialog"
+      "mcp__chrome-devtools__handle_dialog",
+      "WebSearch",
+      "Bash(git checkout:*)",
+      "Bash(node:*)"
     ]
   }
 }

@@ -564,7 +564,54 @@ function verifyToken(token) {
   }
 }
 
-// ========== 语音转文字 API (本地 Whisper) ==========
+// 将音频转换为 MP3 格式（GLM 支持的格式）
+async function convertAudioToMp3(inputBuffer, inputMimeType) {
+  return new Promise((resolve, reject) => {
+    const tempId = randomUUID();
+    const tempDir = tmpdir();
+    
+    // 确定输入文件扩展名
+    let inputExt = '.webm';
+    if (inputMimeType.includes('mp4')) inputExt = '.mp4';
+    else if (inputMimeType.includes('wav')) inputExt = '.wav';
+    else if (inputMimeType.includes('ogg')) inputExt = '.ogg';
+    else if (inputMimeType.includes('aac')) inputExt = '.aac';
+    
+    const inputPath = join(tempDir, `input_${tempId}${inputExt}`);
+    const outputPath = join(tempDir, `output_${tempId}.mp3`);
+    
+    // 写入临时输入文件
+    writeFileSync(inputPath, inputBuffer);
+    
+    // 转换为 MP3
+    ffmpeg(inputPath)
+      .audioCodec('libmp3lame')
+      .audioChannels(1)
+      .audioFrequency(16000)
+      .audioBitrate('64k')
+      .format('mp3')
+      .on('end', () => {
+        try {
+          const outputBuffer = readFileSync(outputPath);
+          // 清理临时文件
+          try { unlinkSync(inputPath); } catch {}
+          try { unlinkSync(outputPath); } catch {}
+          resolve(outputBuffer);
+        } catch (err) {
+          reject(err);
+        }
+      })
+      .on('error', (err) => {
+        // 清理临时文件
+        try { unlinkSync(inputPath); } catch {}
+        try { unlinkSync(outputPath); } catch {}
+        reject(err);
+      })
+      .save(outputPath);
+  });
+}
+
+// 语音转文字 API（优先使用本地 Whisper，备用 GLM API）
 app.post('/api/speech-to-text', upload.single('file'), async (req, res) => {
   // 验证用户已登录
   const authHeader = req.headers.authorization;
@@ -608,6 +655,7 @@ app.post('/api/speech-to-text', upload.single('file'), async (req, res) => {
 
     // 清理临时文件
     try { unlinkSync(inputPath); } catch {}
+    try { unlinkSync(outputPath); } catch {}
 
     if (whisperResponse.data.success && whisperResponse.data.text) {
       console.log(`✅ Whisper 识别成功: ${whisperResponse.data.text}`);
@@ -616,18 +664,10 @@ app.post('/api/speech-to-text', upload.single('file'), async (req, res) => {
         text: whisperResponse.data.text,
         provider: 'whisper'
       });
-    } else {
-      console.log(`❌ Whisper 返回无效响应`);
-      return res.status(500).json({ error: 'Whisper 识别失败，请重试' });
     }
-  } catch (error) {
-    console.error(`❌ Whisper 服务错误: ${error.message}`);
-    return res.status(503).json({ 
-      error: 'Whisper 服务不可用，请确保 whisper-server 已启动',
-      details: error.message
-    });
+  } catch (whisperError) {
+    console.log(`⚠️ Whisper 服务不可用: ${whisperError.message}`);
   }
-});
 
 // 健康检查
 app.get('/api/health', (req, res) => {

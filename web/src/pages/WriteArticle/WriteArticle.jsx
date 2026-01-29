@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Bold, Italic, Code, Link, Image, List, Quote,
-  Upload, ChevronDown, Eye
+  Upload, ChevronDown, Eye, EyeOff, Columns, Copy, Check
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import LoginModal from '../../components/LoginModal/LoginModal';
@@ -10,6 +10,62 @@ import UserInfo from '../../components/UserInfo';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 import './WriteArticle.css';
+
+// Markdown 渲染函数
+const renderMarkdown = (content) => {
+  if (!content) return '';
+  
+  let html = content;
+  
+  // 代码块 (```code```)
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+    return `<div class="code-block"><div class="code-header"><span class="code-lang">${lang || 'code'}</span></div><pre class="code-body"><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim()}</code></pre></div>`;
+  });
+  
+  // 行内代码 (`code`)
+  html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+  
+  // 标题
+  html = html.replace(/^### (.+)$/gm, '<h3 class="content-h3">$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2 class="content-h2">$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1 class="content-h1">$1</h1>');
+  
+  // 粗体和斜体
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  
+  // 链接
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  
+  // 图片
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:16px 0;" />');
+  
+  // 引用
+  html = html.replace(/^> (.+)$/gm, '<blockquote class="content-quote">$1</blockquote>');
+  
+  // 列表
+  html = html.replace(/^- (.+)$/gm, '<li class="content-li">$1</li>');
+  html = html.replace(/(<li class="content-li">.*<\/li>\n?)+/g, '<ul class="content-ul">$&</ul>');
+  
+  // 段落（处理剩余的普通文本行）
+  const lines = html.split('\n');
+  html = lines.map(line => {
+    // 跳过已经是 HTML 标签的行
+    if (line.trim() === '' || 
+        line.startsWith('<h') || 
+        line.startsWith('<div') || 
+        line.startsWith('<pre') ||
+        line.startsWith('<ul') ||
+        line.startsWith('<li') ||
+        line.startsWith('<blockquote') ||
+        line.startsWith('</')) {
+      return line;
+    }
+    return `<p class="content-p">${line}</p>`;
+  }).join('\n');
+  
+  return html;
+};
 
 // 分类数据（静态）
 const categories = [
@@ -36,6 +92,11 @@ export default function WriteArticle() {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showVisibilityDropdown, setShowVisibilityDropdown] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState(false); // 实时预览开关
+  const [copied, setCopied] = useState(false);
+
+  // 使用 useMemo 缓存渲染的 Markdown
+  const renderedContent = useMemo(() => renderMarkdown(content), [content]);
 
   useEffect(() => {
     api.getDrafts().then(setDrafts);
@@ -134,27 +195,77 @@ export default function WriteArticle() {
   };
 
   const handlePreview = () => {
-    // 在新窗口预览
-    const previewContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>预览: ${title}</title>
-        <style>
-          body { font-family: monospace; background: #0A0A12; color: #C0C0D0; padding: 40px; max-width: 800px; margin: 0 auto; }
-          h1 { color: #FFFFFF; }
-          pre { background: #12121A; padding: 16px; border-radius: 8px; overflow-x: auto; }
-          code { color: #00F5D4; }
-        </style>
-      </head>
-      <body>
-        <h1>${title || '无标题'}</h1>
-        <div>${content.replace(/\n/g, '<br>')}</div>
-      </body>
-      </html>
-    `;
-    const blob = new Blob([previewContent], { type: 'text/html' });
+    // 在新窗口预览（带正确的字符编码和 Markdown 渲染）
+    const previewContent = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>预览: ${title || '无标题'}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'SF Mono', 'Fira Code', monospace; 
+      background: #0A0A12; 
+      color: #C0C0D0; 
+      padding: 60px 40px; 
+      max-width: 900px; 
+      margin: 0 auto; 
+      line-height: 1.8;
+    }
+    h1 { color: #FFFFFF; font-size: 2.5rem; margin-bottom: 32px; font-weight: 700; }
+    h2.content-h2 { color: #00F5D4; font-size: 1.5rem; margin: 40px 0 20px; font-weight: 600; }
+    h3.content-h3 { color: #FFFFFF; font-size: 1.25rem; margin: 32px 0 16px; font-weight: 600; }
+    p.content-p { margin-bottom: 16px; font-size: 1rem; }
+    .code-block { 
+      background: #12121A; 
+      border: 1px solid rgba(0, 245, 212, 0.2);
+      border-radius: 12px; 
+      overflow: hidden;
+      margin: 24px 0;
+    }
+    .code-header {
+      background: #1a1a2e;
+      padding: 8px 16px;
+      border-bottom: 1px solid rgba(0, 245, 212, 0.1);
+    }
+    .code-lang { color: #00F5D4; font-size: 0.75rem; text-transform: uppercase; }
+    .code-body { padding: 16px; overflow-x: auto; margin: 0; }
+    .code-body code { color: #E0E0E0; font-size: 0.875rem; }
+    .inline-code { 
+      background: #1a1a2e; 
+      padding: 2px 8px; 
+      border-radius: 4px; 
+      color: #00F5D4;
+      font-size: 0.9em;
+    }
+    .content-quote {
+      border-left: 3px solid #A78BFA;
+      padding: 12px 20px;
+      background: rgba(167, 139, 250, 0.1);
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .content-ul { padding-left: 24px; margin: 16px 0; }
+    .content-li { margin-bottom: 8px; }
+    a { color: #00F5D4; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: #FFFFFF; }
+    em { color: #A78BFA; }
+  </style>
+</head>
+<body>
+  <h1>${title || '无标题'}</h1>
+  <article>${renderMarkdown(content)}</article>
+</body>
+</html>`;
+    const blob = new Blob([previewContent], { type: 'text/html;charset=utf-8' });
     window.open(URL.createObjectURL(blob));
+  };
+
+  // 切换实时预览
+  const toggleLivePreview = () => {
+    setShowPreview(!showPreview);
   };
 
   const getCategoryById = (id) => categories.find(c => c.id === id);
@@ -215,9 +326,17 @@ export default function WriteArticle() {
           <button className="action-btn draft" onClick={handleSaveDraft} disabled={saving}>
             {saving ? '保存中...' : '存草稿'}
           </button>
+          <button 
+            className={`action-btn preview-toggle ${showPreview ? 'active' : ''}`} 
+            onClick={toggleLivePreview}
+            title={showPreview ? '关闭实时预览' : '开启实时预览'}
+          >
+            <Columns size={16} />
+            {showPreview ? '关闭预览' : '实时预览'}
+          </button>
           <button className="action-btn preview" onClick={handlePreview}>
             <Eye size={16} />
-            预览
+            新窗口
           </button>
           <button className="action-btn publish" onClick={handlePublish} disabled={saving}>
             {saving ? '发布中...' : (isEditMode ? '更新文章' : '发布文章')}
@@ -228,7 +347,7 @@ export default function WriteArticle() {
 
       <main className="write-main">
         {/* Editor Area */}
-        <div className="editor-area">
+        <div className={`editor-area ${showPreview ? 'with-preview' : ''}`}>
           {/* Title Input */}
           <input
             type="text"
@@ -270,13 +389,29 @@ export default function WriteArticle() {
             ))}
           </div>
 
-          {/* Markdown Editor */}
-          <textarea
-            className="md-editor"
-            placeholder="开始写作...支持 Markdown 语法"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
+          {/* Editor and Preview Container */}
+          <div className={`editor-preview-container ${showPreview ? 'split' : ''}`}>
+            {/* Markdown Editor */}
+            <textarea
+              className="md-editor"
+              placeholder="开始写作...支持 Markdown 语法"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+            
+            {/* Live Preview Panel */}
+            {showPreview && (
+              <div className="live-preview-panel">
+                <div className="preview-header">
+                  <span className="preview-title">📖 实时预览</span>
+                </div>
+                <div 
+                  className="preview-content"
+                  dangerouslySetInnerHTML={{ __html: renderedContent || '<p class="empty-hint">开始输入内容查看预览...</p>' }}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Panel */}

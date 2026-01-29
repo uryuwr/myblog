@@ -515,3 +515,215 @@
   box-shadow: 0 4px 20px rgba(102, 217, 255, 0.3);
 }
 
+/* ============================================
+   实时预览相关样式
+   ============================================ */
+
+/* 预览切换按钮 */
+.action-btn.preview-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: transparent;
+}
+
+.action-btn.preview-toggle:hover {
+  background: rgba(0, 245, 212, 0.1);
+}
+
+.action-btn.preview-toggle.active {
+  background: var(--accent-cyan);
+  color: var(--bg-dark);
+}
+
+/* 编辑器预览容器 */
+.editor-preview-container {
+  display: flex;
+  flex: 1;
+  min-height: 400px;
+  gap: 0;
+}
+
+.editor-preview-container .md-editor {
+  border-radius: 0 0 8px 8px;
+}
+
+.editor-preview-container.split {
+  gap: var(--gap-2xl);
+}
+
+.editor-preview-container.split .md-editor {
+  flex: 1;
+  min-width: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+/* 实时预览面板 */
+.live-preview-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-purple-30, rgba(167, 139, 250, 0.3));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  background: rgba(167, 139, 250, 0.1);
+  border-bottom: 1px solid var(--accent-purple-30, rgba(167, 139, 250, 0.2));
+}
+
+.preview-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--accent-purple);
+}
+
+.preview-content {
+  flex: 1;
+  padding: var(--space-8);
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+/* 预览内容样式 */
+.preview-content .content-h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-8);
+}
+
+.preview-content .content-h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  color: var(--accent-cyan);
+  margin: var(--space-10) 0 var(--space-6);
+}
+
+.preview-content .content-h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: var(--space-8) 0 var(--space-5);
+}
+
+.preview-content .content-p {
+  margin-bottom: var(--space-5);
+}
+
+.preview-content .code-block {
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 8px;
+  margin: var(--space-6) 0;
+  overflow: hidden;
+}
+
+.preview-content .code-header {
+  background: var(--bg-dark);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--accent-cyan-20);
+}
+
+.preview-content .code-lang {
+  font-size: var(--text-xs);
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+}
+
+.preview-content .code-body {
+  padding: var(--space-5);
+  margin: 0;
+  overflow-x: auto;
+}
+
+.preview-content .code-body code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.preview-content .inline-code {
+  padding: 2px var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--accent-cyan);
+}
+
+.preview-content .content-quote {
+  border-left: 3px solid var(--accent-purple);
+  padding: var(--space-4) var(--space-6);
+  background: rgba(167, 139, 250, 0.1);
+  margin: var(--space-6) 0;
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+}
+
+.preview-content .content-ul {
+  padding-left: var(--space-8);
+  margin: var(--space-5) 0;
+}
+
+.preview-content .content-li {
+  margin-bottom: var(--space-3);
+}
+
+.preview-content a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+}
+
+.preview-content a:hover {
+  text-decoration: underline;
+}
+
+.preview-content strong {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.preview-content em {
+  color: var(--accent-purple);
+}
+
+.preview-content .empty-hint {
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-12);
+}
+
+/* 开启预览时调整右侧面板 */
+.editor-area.with-preview + .right-panel {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  .editor-preview-container.split {
+    flex-direction: column;
+  }
+  
+  .editor-preview-container.split .md-editor,
+  .live-preview-panel {
+    flex: none;
+    min-height: 300px;
+  }
+}

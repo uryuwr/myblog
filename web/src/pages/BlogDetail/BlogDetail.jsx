@@ -1,21 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Eye, Heart, Calendar, Share2, Bookmark,
-  Copy, Check, Trash2, Edit
+  ArrowLeft, Eye, Heart, Calendar,
+  Copy, Check, Trash2, Edit, ChevronsDown, ChevronsUp
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
 import { api } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import './BlogDetail.css';
-
-// 用户信息（静态数据）
-const userProfile = {
-  name: '陈煌',
-  title: '后端开发工程师',
-  avatar: '陈',
-};
 
 export default function BlogDetail() {
   const { id } = useParams();
@@ -24,13 +17,16 @@ export default function BlogDetail() {
   const [article, setArticle] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
-  const [liked, setLiked] = useState(false);
-  const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showDeleteArticleDialog, setShowDeleteArticleDialog] = useState(false);
   const [showDeleteCommentDialog, setShowDeleteCommentDialog] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
+  const [showScrollButton, setShowScrollButton] = useState(true);
+  
+  // 底部操作区域的 ref
+  const authorCardRef = useRef(null);
+  const topRef = useRef(null);
 
   useEffect(() => {
     Promise.all([
@@ -42,6 +38,18 @@ export default function BlogDetail() {
       setLoading(false);
     });
   }, [id]);
+
+  // 滚动到底部（作者卡片/操作区域）
+  const scrollToBottom = () => {
+    authorCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setShowScrollButton(false);
+    setTimeout(() => setShowScrollButton(true), 1000);
+  };
+
+  // 滚动到顶部
+  const scrollToTop = () => {
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const handleSubmitComment = async (e) => {
     e.preventDefault();
@@ -189,40 +197,21 @@ export default function BlogDetail() {
     <div className="page-wrapper">
       <Navbar />
 
-      <main className="detail-main">
-        {/* Article Header */}
+      <main className="detail-main" ref={topRef}>
+        {/* Article Header - Redesigned Layout */}
         <header className="article-header">
-          <div className="header-actions">
+          {/* 1. 返回按钮独立一行 */}
+          <div className="back-row">
             <Link to="/blog" className="back-btn">
               <ArrowLeft size={18} />
               返回列表
             </Link>
-            {user && user.email && (
-              <Link to={`/write?id=${id}`} className="edit-article-btn">
-                <Edit size={16} />
-                编辑文章
-              </Link>
-            )}
-            <button className="delete-article-btn" onClick={handleDeleteArticle}>
-              <Trash2 size={16} />
-              删除文章
-            </button>
           </div>
 
-          <div className="article-tags">
-            {article.tags?.map(tag => (
-              <span 
-                key={tag} 
-                className="tag"
-                style={{ '--tag-color': article.color }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
+          {/* 2. 标题在最前面 */}
           <h1 className="article-title">{article.title}</h1>
 
+          {/* 3. 元信息 */}
           <div className="article-meta">
             <span className="meta-item">
               <Eye size={16} />
@@ -237,6 +226,19 @@ export default function BlogDetail() {
               {article.createdAt}
             </span>
           </div>
+
+          {/* 4. 标签移到元信息下方 */}
+          <div className="article-tags">
+            {article.tags?.map(tag => (
+              <span 
+                key={tag} 
+                className="tag"
+                style={{ '--tag-color': article.color }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         </header>
 
         {/* Article Content */}
@@ -244,41 +246,19 @@ export default function BlogDetail() {
           {renderContent(article.content)}
         </article>
 
-        {/* Author Card */}
-        <div className="author-card">
-          <div className="author-avatar">
-            {userProfile.avatar}
+        {/* Article Actions - 编辑/删除按钮（登录后显示）*/}
+        {user && user.email && (
+          <div className="article-actions-bar" ref={authorCardRef}>
+            <Link to={`/write?id=${id}`} className="edit-article-btn">
+              <Edit size={14} />
+              编辑文章
+            </Link>
+            <button className="delete-article-btn" onClick={handleDeleteArticle}>
+              <Trash2 size={14} />
+              删除文章
+            </button>
           </div>
-          <div className="author-info">
-            <h4 className="author-name">{userProfile.name}</h4>
-            <p className="author-bio">
-              {userProfile.title}，热爱分享技术，专注于 React 生态和 Node.js 后端开发。
-            </p>
-          </div>
-          <button className="follow-btn">关注</button>
-        </div>
-
-        {/* Action Bar */}
-        <div className="action-bar">
-          <button 
-            className={`action-btn like ${liked ? 'active' : ''}`}
-            onClick={() => setLiked(!liked)}
-          >
-            <Heart size={20} fill={liked ? 'currentColor' : 'none'} />
-            喜欢 ({article.likes + (liked ? 1 : 0)})
-          </button>
-          <button className="action-btn">
-            <Share2 size={20} />
-            分享
-          </button>
-          <button 
-            className={`action-btn ${bookmarked ? 'active' : ''}`}
-            onClick={() => setBookmarked(!bookmarked)}
-          >
-            <Bookmark size={20} fill={bookmarked ? 'currentColor' : 'none'} />
-            收藏
-          </button>
-        </div>
+        )}
 
         {/* Comments Section */}
         <section className="comments-section">
@@ -330,6 +310,27 @@ export default function BlogDetail() {
           </div>
         </section>
       </main>
+
+      {/* 快速跳转按钮 */}
+      <div className="quick-nav-buttons">
+        <button 
+          className="quick-nav-btn" 
+          onClick={scrollToTop}
+          title="回到顶部"
+        >
+          <ChevronsUp size={20} />
+        </button>
+        {user && user.email && (
+          <button 
+            className="quick-nav-btn highlight" 
+            onClick={scrollToBottom}
+            title="跳转到编辑/删除区域"
+          >
+            <ChevronsDown size={20} />
+            <span>操作</span>
+          </button>
+        )}
+      </div>
 
       {/* 删除文章确认对话框 */}
       <ConfirmDialog

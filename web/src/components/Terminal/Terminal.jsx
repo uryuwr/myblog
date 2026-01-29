@@ -16,6 +16,13 @@ const Terminal = ({ onActivityChange }) => {
   const [imeInput, setImeInput] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
+  
+  // 语音输入状态
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  
   const activityTimeoutRef = useRef(null);
   const lastTapRef = useRef(0); // 双击检测
   
@@ -422,6 +429,149 @@ const Terminal = ({ onActivityChange }) => {
     }
   }, [sendMessage]);
 
+  // ========== 语音输入功能 ==========
+  
+  // 获取 API 地址
+  const getApiBaseUrl = useCallback(() => {
+    if (import.meta.env.VITE_API_URL) {
+      return import.meta.env.VITE_API_URL;
+    }
+    const host = window.location.hostname;
+    return `http://${host}:3001/api`;
+  }, []);
+
+  // 检查是否支持语音输入
+  const checkVoiceSupport = useCallback(() => {
+    const isSecure = window.isSecureContext || 
+                     window.location.protocol === 'https:' || 
+                     window.location.hostname === 'localhost' ||
+                     window.location.hostname === '127.0.0.1';
+    
+    if (!isSecure) {
+      return { supported: false, reason: '语音输入需要 HTTPS 或 localhost 访问' };
+    }
+    
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return { supported: false, reason: '您的浏览器不支持语音输入' };
+    }
+    
+    if (typeof MediaRecorder === 'undefined') {
+      return { supported: false, reason: '您的浏览器不支持录音功能' };
+    }
+    
+    return { supported: true };
+  }, []);
+  
+  // 开始录音
+  const startRecording = useCallback(async () => {
+    if (!token) {
+      xtermRef.current?.writeln('\x1b[33m请先登录以使用语音输入\x1b[0m');
+      return;
+    }
+
+    const support = checkVoiceSupport();
+    if (!support.supported) {
+      xtermRef.current?.writeln(`\x1b[31m${support.reason}\x1b[0m`);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // 选择支持的音频格式
+      const mimeTypes = ['audio/mp4', 'audio/webm', 'audio/ogg'];
+      let selectedMimeType = '';
+      for (const type of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          selectedMimeType = type;
+          break;
+        }
+      }
+      
+      const mediaRecorder = new MediaRecorder(stream, selectedMimeType ? { mimeType: selectedMimeType } : {});
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop());
+        await processAudioToText();
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      xtermRef.current?.write('\x1b[36m🎤 录音中... (再次点击停止)\x1b[0m');
+    } catch (error) {
+      console.error('录音失败:', error);
+      xtermRef.current?.writeln(`\x1b[31m无法启动录音: ${error.message}\x1b[0m`);
+    }
+  }, [token, checkVoiceSupport]);
+  
+  // 停止录音
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsProcessing(true);
+      xtermRef.current?.write('\r\x1b[K\x1b[33m⏳ 识别中...\x1b[0m');
+    }
+  }, [isRecording]);
+  
+  // 处理音频转文字
+  const processAudioToText = useCallback(async () => {
+    if (audioChunksRef.current.length === 0) {
+      setIsProcessing(false);
+      return;
+    }
+    
+    try {
+      const audioBlob = new Blob(audioChunksRef.current, { type: audioChunksRef.current[0]?.type || 'audio/webm' });
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'audio.webm');
+      
+      const response = await fetch(`${getApiBaseUrl()}/speech-to-text`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      xtermRef.current?.write('\r\x1b[K'); // 清除 "识别中..."
+      
+      if (result.success && result.text) {
+        // 将识别的文字发送到终端
+        sendMessage({ type: 'input', data: result.text });
+        xtermRef.current?.write(result.text);
+      } else {
+        xtermRef.current?.writeln(`\x1b[31m识别失败: ${result.error || '未知错误'}\x1b[0m`);
+      }
+    } catch (error) {
+      console.error('语音识别错误:', error);
+      xtermRef.current?.write('\r\x1b[K');
+      xtermRef.current?.writeln(`\x1b[31m语音识别失败: ${error.message}\x1b[0m`);
+    } finally {
+      setIsProcessing(false);
+      audioChunksRef.current = [];
+    }
+  }, [token, getApiBaseUrl, sendMessage]);
+  
+  // 切换录音状态
+  const toggleRecording = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    } else if (!isProcessing) {
+      startRecording();
+    }
+  }, [isRecording, isProcessing, startRecording, stopRecording]);
+
   const toggleFullscreen = () => setIsFullscreen(prev => !prev);
 
   // 点击终端区域
@@ -480,6 +630,25 @@ const Terminal = ({ onActivityChange }) => {
             {isConnected ? '●' : '○'}
           </span>
         </div>
+        {/* 语音输入按钮 - 仅登录后显示 */}
+        {token && (
+          <button 
+            className={`voice-btn ${isRecording ? 'recording' : ''} ${isProcessing ? 'processing' : ''}`}
+            onClick={(e) => { e.stopPropagation(); toggleRecording(); }}
+            title={isRecording ? '停止录音' : '语音输入'}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" className="spin">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+              </svg>
+            )}
+          </button>
+        )}
         <button 
           className="fullscreen-btn" 
           onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
