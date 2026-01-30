@@ -37,3 +37,11 @@ dist-ssr/
 
 # Claude Code config
 .claude/
+
+# Windows reserved device names (prevent accidental creation)
+nul
+con
+prn
+aux
+com[0-9]
+lpt[0-9]
