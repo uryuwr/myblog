@@ -1,5 +1,5 @@
 /* ============================================
-   终端组件样式 - xterm.js + 全屏动画
+   终端组件样式 - xterm.js
    ============================================ */
 
 .terminal {
@@ -16,35 +16,11 @@
     0 0 60px var(--accent-cyan-20),
     0 0 120px var(--accent-violet-15);
   position: relative;
-  
-  /* 全屏动画过渡 */
-  transition: 
-    all 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.3s ease;
 }
 
 .terminal:focus {
   outline: none;
   border-color: var(--accent-cyan-50);
-}
-
-/* 全屏模式 */
-.terminal.fullscreen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-width: none;
-  width: 100vw;
-  height: 100vh;
-  border-radius: 0;
-  z-index: 9999;
-  box-shadow: none;
-  border: none;
-  /* 允许 JavaScript 完全控制触摸事件 */
-  touch-action: none;
-  overflow: hidden;
 }
 
 /* 窗口栏 */
@@ -57,52 +33,6 @@
   background: var(--bg-code);
   border-bottom: 1px solid var(--accent-cyan-20);
   flex-shrink: 0;
-}
-
-.terminal.fullscreen .terminal-bar {
-  height: 48px;
-  padding: 0 var(--space-9);
-}
-
-/* Fullscreen 模式下的终端内容 */
-.terminal.fullscreen .terminal-content {
-  -webkit-overflow-scrolling: touch;
-  overflow: hidden;
-}
-
-/* Fullscreen 模式下的 xterm 容器 */
-.terminal.fullscreen .xterm-container {
-  -webkit-overflow-scrolling: touch;
-  overflow: hidden;
-}
-
-/* Fullscreen 模式下的 xterm viewport - 关键滚动区域 */
-.terminal.fullscreen .xterm-container .xterm-viewport {
-  /* 使用原生滚动，默认速度和动量 */
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
-
-  /* 让滚动条可以触摸 */
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* 全平台显示滚动条，让用户可以触摸滚动 */
-.terminal.fullscreen .xterm-container .xterm-viewport::-webkit-scrollbar {
-  width: 12px !important;
-  opacity: 0.8;
-}
-
-.terminal.fullscreen .xterm-container .xterm-viewport::-webkit-scrollbar-thumb {
-  background: rgba(0, 245, 212, 0.6);
-  border-radius: 6px;
-  min-height: 40px;
-}
-
-.terminal.fullscreen .xterm-container .xterm-viewport::-webkit-scrollbar-track {
-  background: transparent;
 }
 
 .terminal-dots {
@@ -163,35 +93,46 @@
   50% { opacity: 0.3; }
 }
 
-/* 全屏按钮 */
-.fullscreen-btn {
+/* Danger 模式切换按钮 */
+.danger-mode-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: transparent;
+  padding: 0;
+  background: rgba(102, 217, 255, 0.1);
   border: 1px solid var(--accent-cyan-30);
   border-radius: 6px;
-  color: var(--text-muted);
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.fullscreen-btn:hover {
-  background: var(--accent-cyan-10);
-  border-color: var(--accent-cyan-50);
-  color: var(--accent-cyan);
-  transform: scale(1.05);
+.danger-mode-btn:hover {
+  background: rgba(102, 217, 255, 0.2);
+  border-color: var(--accent-cyan);
 }
 
-.fullscreen-btn:active {
-  transform: scale(0.95);
+.danger-mode-btn.active {
+  background: rgba(255, 107, 107, 0.2);
+  border-color: rgba(255, 107, 107, 0.6);
+  animation: danger-pulse 1.5s ease-in-out infinite;
 }
 
-.terminal.fullscreen .fullscreen-btn {
-  width: 32px;
-  height: 32px;
+.danger-mode-btn.switching {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@keyframes danger-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 8px 2px rgba(255, 107, 107, 0.3);
+  }
 }
 
 /* 终端内容 */
@@ -390,62 +331,12 @@
   margin: 0;
 }
 
-/* 全屏切换动画遮罩 */
-.terminal.fullscreen::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: -1;
-  animation: fade-in-bg 0.3s ease;
-}
-
-@keyframes fade-in-bg {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 /* 响应式 */
 @media (max-width: 768px) {
   .terminal {
     max-width: 100%;
     height: 300px;
-    /* 移动端非全屏模式完全禁用触摸滚动 */
     touch-action: none;
-  }
-
-  .terminal.fullscreen .terminal-bar {
-    height: 44px;
-    padding: 0 var(--space-5);
-  }
-
-  /* 全屏模式下启用触摸滚动 */
-  .terminal.fullscreen .xterm-container {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain; /* 防止 iOS Safari 橡皮筋效果 */
-  }
-
-  .terminal.fullscreen .xterm-viewport {
-    overflow-y: scroll !important;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    touch-action: pan-y;
-  }
-
-  /* 移动端全屏显示滚动条 */
-  .terminal.fullscreen .xterm-container .xterm-viewport::-webkit-scrollbar {
-    width: 16px !important;
-    opacity: 0.9;
-  }
-
-  .terminal.fullscreen .xterm-container .xterm-viewport::-webkit-scrollbar-thumb {
-    background: rgba(0, 245, 212, 0.7);
-    border-radius: 8px;
-    min-height: 50px;
   }
 }
 
@@ -480,86 +371,31 @@
   position: relative;
 }
 
-/* 移动端虚拟按键 */
-.virtual-keys {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  background: rgba(13, 13, 21, 0.95);
-  border-top: 1px solid var(--accent-cyan-20);
-}
+/* ============================================
+   移动端悬浮按钮 - fixed 定位
+   ============================================ */
 
-.virtual-keys-row {
+.mobile-fixed-btns {
+  position: fixed;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: 16px;
+  right: 16px;
   display: flex;
-  gap: 6px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.vk-btn {
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  height: 36px;
-  padding: 0 10px;
-  background: rgba(102, 217, 255, 0.1);
-  border: 1px solid var(--accent-cyan-30);
-  border-radius: 6px;
-  color: var(--accent-cyan);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
+  pointer-events: none; /* 让中间区域可以穿透点击 */
+  z-index: 500;
 }
 
-.vk-btn:active {
-  background: rgba(102, 217, 255, 0.3);
-  transform: scale(0.95);
-}
-
-.vk-btn.vk-ctrl {
-  background: rgba(255, 107, 107, 0.15);
-  border-color: rgba(255, 107, 107, 0.4);
-  color: #ff6b6b;
-}
-
-.vk-btn.vk-ctrl:active {
-  background: rgba(255, 107, 107, 0.35);
-}
-
-.vk-btn.vk-enter {
-  background: rgba(74, 222, 128, 0.15);
-  border-color: rgba(74, 222, 128, 0.4);
-  color: #4ade80;
-  min-width: 60px;
-}
-
-.vk-btn.vk-enter:active {
-  background: rgba(74, 222, 128, 0.35);
-}
-
-.vk-btn.vk-arrow {
-  font-size: 16px;
-  min-width: 50px;
-}
-
-/* 全屏模式下虚拟按键位置调整 */
-.terminal.fullscreen .virtual-keys {
-  padding: 10px 16px;
-  padding-bottom: max(10px, env(safe-area-inset-bottom));
+.mobile-fixed-btns .voice-btn,
+.mobile-fixed-btns .keyboard-btn {
+  pointer-events: auto; /* 按钮本身可点击 */
 }
 
 /* ========== 语音输入按钮 ========== */
 .voice-btn {
-  position: absolute;
-  /* 默认在左下方，使用 JS 控制位置 */
-  left: 16px;
-  bottom: 16px;
+  /* 移除绝对定位，使用 flex 布局 */
+  position: relative;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -595,14 +431,6 @@
   cursor: not-allowed;
 }
 
-/* 拖动时样式 */
-.terminal.dragging .voice-btn {
-  cursor: grabbing;
-  box-shadow:
-    0 8px 25px rgba(0, 217, 255, 0.5),
-    0 0 40px rgba(0, 217, 255, 0.4);
-}
-
 /* 录音中状态 */
 .voice-btn.recording {
   background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
@@ -635,8 +463,229 @@
     0 0 20px rgba(245, 158, 11, 0.3);
 }
 
-/* 全屏模式下的语音按钮 */
-.terminal.fullscreen .voice-btn {
-  width: 56px;
-  height: 56px;
+/* ========== 键盘唤起按钮（移动端） ========== */
+.keyboard-btn {
+  /* 移除绝对定位，使用 flex 布局 */
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-green, #4ade80) 0%, var(--accent-cyan) 100%);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 4px 15px rgba(74, 222, 128, 0.3),
+    0 0 20px rgba(74, 222, 128, 0.2);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+.keyboard-btn:hover {
+  box-shadow:
+    0 6px 20px rgba(74, 222, 128, 0.4),
+    0 0 30px rgba(74, 222, 128, 0.3);
+}
+
+.keyboard-btn:active {
+  transform: scale(0.95);
+}
+
+/* ========== 移动端悬浮输入框 ========== */
+.floating-input-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: calc(60px + env(safe-area-inset-top, 0px));
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.floating-input-container {
+  width: calc(100% - 32px);
+  max-width: 400px;
+  background: linear-gradient(180deg, #1a1a24 0%, #12121a 100%);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(0, 217, 255, 0.1);
+  animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.floating-input-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--accent-cyan-20);
+  background: rgba(0, 217, 255, 0.05);
+}
+
+.floating-input-title {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+}
+
+.floating-input-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.floating-input-close:active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.floating-input-body {
+  padding: 12px 16px 16px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.floating-input-field {
+  flex: 1;
+  padding: 14px 16px;
+  background: rgba(13, 13, 21, 0.8);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 16px; /* 防止 iOS 缩放 */
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.floating-input-field:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.15);
+}
+
+.floating-input-field::placeholder {
+  color: var(--text-dim);
+}
+
+/* 简化版悬浮输入框 */
+.floating-input-simple {
+  max-width: 360px;
+}
+
+.floating-input-simple .floating-submit-btn {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-green, #4ade80) 100%);
+  border: none;
+  border-radius: 10px;
+  color: #0D0D15;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.floating-input-simple .floating-submit-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+}
+
+/* ============================================
+   悬浮输入框内的虚拟按键
+   ============================================ */
+
+.floating-virtual-keys {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.floating-vk-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.floating-vk-btn {
+  flex: 1;
+  max-width: 80px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(102, 217, 255, 0.1);
+  border: 1px solid var(--accent-cyan-30);
+  border-radius: 8px;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.floating-vk-btn:active {
+  background: rgba(102, 217, 255, 0.3);
+  transform: scale(0.95);
+}
+
+.floating-vk-btn.floating-vk-enter {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: #4ade80;
+}
+
+.floating-vk-btn.floating-vk-enter:active {
+  background: rgba(74, 222, 128, 0.35);
+}
+
+.floating-vk-btn.floating-vk-arrow {
+  font-size: 18px;
 }

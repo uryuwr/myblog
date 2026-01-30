@@ -5,10 +5,19 @@ const TerminalContext = createContext(null);
 
 // 动态获取 WebSocket 地址
 const getWsUrl = () => {
+  // 优先使用环境变量
+  if (import.meta.env.VITE_API_URL) {
+    // 将 https://xxx/api 转换为 wss://xxx
+    const apiUrl = import.meta.env.VITE_API_URL.replace(/\/api$/, '');
+    const wsUrl = apiUrl.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
+    console.log('🔗 WebSocket URL (from env):', wsUrl);
+    return wsUrl;
+  }
   // WebSocket 直接连接后端（不通过 Vite 代理，避免 Node.js 22 兼容问题）
   const hostname = window.location.hostname;
-  // 后端始终是 HTTP/WS（未配置 HTTPS）
-  return `ws://${hostname}:3001`;
+  const wsUrl = `ws://${hostname}:3001`;
+  console.log('🔗 WebSocket URL (dynamic):', wsUrl);
+  return wsUrl;
 };
 
 // 生成唯一客户端 ID（用于区分不同设备/标签页）
@@ -156,7 +165,11 @@ export function TerminalProvider({ children }) {
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket 错误:', error);
+      console.error('❌ WebSocket 错误:', error);
+      console.error('❌ WebSocket URL:', wsUrl);
+      console.error('❌ WebSocket readyState:', ws.readyState);
+      // 尝试在页面上显示错误（通过 alert 或其他方式）
+      broadcastMessage({ type: 'error', message: `WebSocket 连接失败: ${wsUrl}` });
       connectingRef.current = false;
     };
 

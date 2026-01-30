@@ -122,3 +122,24 @@
 .user-info--outline .user-info__logout-btn:active {
   transform: translateY(0);
 }
+
+/* =================================
+   移动端响应式
+   ================================= */
+@media (max-width: 768px) {
+  .user-info--default {
+    gap: 6px;
+    padding: 4px 8px;
+    background: transparent;
+    border-radius: 4px;
+  }
+
+  .user-info--default .user-info__email {
+    display: none;
+  }
+
+  .user-info--default .user-info__logout-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}

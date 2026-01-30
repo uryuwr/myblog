@@ -4,6 +4,11 @@ const AuthContext = createContext(null);
 
 // API 基础地址
 const getApiUrl = () => {
+  // 优先使用环境变量
+  if (import.meta.env.VITE_API_URL) {
+    // 环境变量包含 /api，这里需要去掉
+    return import.meta.env.VITE_API_URL.replace(/\/api$/, '');
+  }
   const host = window.location.hostname;
   return `http://${host}:3001`;
 };
@@ -47,19 +52,44 @@ export const AuthProvider = ({ children }) => {
 
   // 发送验证码
   const sendCode = useCallback(async (email) => {
-    const response = await fetch(`${getApiUrl()}/api/auth/send-code`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
+      
+      const response = await fetch(`${getApiUrl()}/api/auth/send-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || '发送失败');
+      // 尝试解析 JSON 响应
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error('响应解析失败:', parseError);
+        throw new Error('服务器响应异常，请重试');
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.error || '发送失败');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('发送验证码错误:', error);
+      // 网络错误时提供更友好的提示
+      if (error.name === 'AbortError') {
+        throw new Error('请求超时，请检查网络后重试');
+      }
+      if (error.name === 'TypeError') {
+        throw new Error('网络连接失败，请检查网络后重试');
+      }
+      throw error;
     }
-
-    return data;
   }, []);
 
   // 验证登录

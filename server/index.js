@@ -73,7 +73,12 @@ try {
   console.warn('⚠️ 邮件服务配置失败，请检查 SMTP 配置');
 }
 
-app.use(cors());
+app.use(cors({
+  origin: true, // 允许所有来源
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 app.use(express.json());
 
 // 注册博客文章 API 路由

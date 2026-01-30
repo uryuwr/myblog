@@ -4,6 +4,7 @@
 
 .piweisi-page {
   min-height: 100vh;
+  min-height: 100dvh; /* 动态视口高度，更好地支持移动端 */
   display: flex;
   flex-direction: column;
   background: var(--bg-dark);
