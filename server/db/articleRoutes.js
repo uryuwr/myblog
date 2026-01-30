@@ -1,5 +1,41 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import db from './database.js';
+
+// JWT Secret - 从环境变量获取
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
+
+// 验证 JWT Token 并返回解码后的数据
+function verifyToken(token) {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
+
+// 认证中间件 - 验证 Token 并获取用户信息
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, error: '未提供认证 Token' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  const decoded = verifyToken(token);
+
+  if (!decoded) {
+    return res.status(401).json({ success: false, error: 'Token 无效或已过期' });
+  }
+
+  // 将用户信息添加到请求对象
+  req.user = {
+    email: decoded.email
+  };
+
+  next();
+}
 
 // 验证用户邮箱是否在白名单中
 function isEmailWhitelisted(email) {
@@ -12,7 +48,18 @@ function isEmailWhitelisted(email) {
   // 如果白名单为空，允许所有邮箱
   if (ALLOWED_EMAILS.length === 0) return true;
 
-  return ALLOWED_EMAILS.includes(email);
+  return ALLOWED_EMAILS.includes(email.toLowerCase());
+}
+
+// 验证用户是否有编辑权限（邮箱必须在白名单中）
+function canEditArticle(req, res, next) {
+  const { email } = req.user;
+
+  if (!isEmailWhitelisted(email)) {
+    return res.status(403).json({ success: false, error: '只有白名单邮箱的用户可以编辑文章' });
+  }
+
+  next();
 }
 
 const router = express.Router();
@@ -165,8 +212,8 @@ router.get('/articles/:id', (req, res) => {
   }
 });
 
-// 创建文章
-router.post('/articles', (req, res) => {
+// 创建文章 - 需要登录且邮箱在白名单中
+router.post('/articles', requireAuth, canEditArticle, (req, res) => {
   try {
     const { title, description, content, category, tags, visibility, status } = req.body;
     
@@ -208,16 +255,11 @@ router.post('/articles', (req, res) => {
   }
 });
 
-// 更新文章
-router.put('/articles/:id', (req, res) => {
+// 更新文章 - 需要登录且邮箱在白名单中
+router.put('/articles/:id', requireAuth, canEditArticle, (req, res) => {
   try {
     const { id } = req.params;
-    const { email } = req.body; // 从请求体获取邮箱
-
-    // 验证邮箱是否在白名单中
-    if (!isEmailWhitelisted(email)) {
-      return res.status(403).json({ success: false, error: '只有白名单邮箱的用户可以编辑文章' });
-    }
+    const { email } = req.user; // 从 JWT Token 获取邮箱
 
     const { title, description, content, category, tags, visibility, status } = req.body;
 
@@ -255,8 +297,8 @@ router.put('/articles/:id', (req, res) => {
   }
 });
 
-// 删除文章
-router.delete('/articles/:id', (req, res) => {
+// 删除文章 - 需要登录且邮箱在白名单中
+router.delete('/articles/:id', requireAuth, canEditArticle, (req, res) => {
   try {
     const { id } = req.params;
     
@@ -345,8 +387,8 @@ router.post('/articles/:id/comments', (req, res) => {
   }
 });
 
-// 删除评论
-router.delete('/comments/:commentId', (req, res) => {
+// 删除评论 - 需要登录
+router.delete('/comments/:commentId', requireAuth, (req, res) => {
   try {
     const { commentId } = req.params;
     
@@ -366,8 +408,8 @@ router.delete('/comments/:commentId', (req, res) => {
 
 // ========== 草稿 API ==========
 
-// 获取草稿列表
-router.get('/drafts', (req, res) => {
+// 获取草稿列表 - 需要登录
+router.get('/drafts', requireAuth, (req, res) => {
   try {
     const drafts = db.prepare(`
       SELECT id, title, updated_at FROM drafts 
@@ -385,8 +427,8 @@ router.get('/drafts', (req, res) => {
   }
 });
 
-// 保存草稿
-router.post('/drafts', (req, res) => {
+// 保存草稿 - 需要登录
+router.post('/drafts', requireAuth, (req, res) => {
   try {
     const { title, content, category, tags } = req.body;
     
