@@ -72,6 +72,13 @@ export function TerminalProvider({ children }) {
   // 处理服务器消息
   const handleServerMessage = useCallback((message) => {
     switch (message.type) {
+      case 'ping':
+        // 响应服务器心跳
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ type: 'pong', timestamp: message.timestamp }));
+        }
+        return; // 不广播心跳消息
+      
       case 'auth_required':
         setAuthStatus('idle');
         // 如果已登录，自动发送认证（包含客户端 ID）

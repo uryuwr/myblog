@@ -90,6 +90,9 @@ const server = createServer(app);
 // 创建 WebSocket 服务器
 const wss = new WebSocketServer({ server });
 
+// WebSocket 心跳检测间隔（30秒）
+const HEARTBEAT_INTERVAL = 30000;
+
 // 存储客户端状态（每个 WebSocket 连接独立）
 const clientState = new Map(); // Map<ws, { ptyProcess, cwd }>
 
@@ -117,6 +120,12 @@ const dangerousCommands = [
 wss.on('connection', (ws, req) => {
   console.log('🔌 WebSocket 客户端已连接');
   
+  // 心跳检测
+  ws.isAlive = true;
+  ws.on('pong', () => {
+    ws.isAlive = true;
+  });
+  
   // 初始化客户端状态（未认证）
   clientState.set(ws, {
     ptyProcess: null,
@@ -139,6 +148,11 @@ wss.on('connection', (ws, req) => {
   ws.on('message', (data) => {
     try {
       const message = JSON.parse(data.toString());
+      // 处理客户端心跳响应
+      if (message.type === 'pong') {
+        ws.isAlive = true;
+        return;
+      }
       handleMessage(ws, message);
     } catch (error) {
       ws.send(JSON.stringify({
@@ -162,6 +176,28 @@ wss.on('connection', (ws, req) => {
   ws.on('error', (error) => {
     console.error('WebSocket 错误:', error);
   });
+});
+
+// 心跳检测定时器 - 每30秒检测一次
+const heartbeatInterval = setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) {
+      console.log('💔 心跳超时，断开连接');
+      return ws.terminate();
+    }
+    ws.isAlive = false;
+    // 发送 ping（WebSocket 协议层）
+    ws.ping();
+    // 同时发送应用层心跳（某些代理不支持 WebSocket ping/pong）
+    if (ws.readyState === ws.OPEN) {
+      ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+    }
+  });
+}, HEARTBEAT_INTERVAL);
+
+// 服务器关闭时清理心跳定时器
+wss.on('close', () => {
+  clearInterval(heartbeatInterval);
 });
 
 // 处理 WebSocket 消息

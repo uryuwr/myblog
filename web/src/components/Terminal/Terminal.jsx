@@ -39,6 +39,9 @@ const Terminal = ({ onActivityChange }) => {
   const [showFloatingInput, setShowFloatingInput] = useState(false);
   const [floatingInputValue, setFloatingInputValue] = useState('');
   const floatingInputRef = useRef(null);
+  
+  // 跟踪终端当前输入行内容（用于同步悬浮输入框）
+  const currentInputRef = useRef('');
 
   // Danger 模式状态（跳过权限确认）
   const [isDangerMode, setIsDangerMode] = useState(false);
@@ -559,16 +562,18 @@ const Terminal = ({ onActivityChange }) => {
       xtermRef.current?.write('\r\x1b[K'); // 清除 "识别中..."
       
       if (result.success && result.text) {
+        // 更新输入跟踪
+        currentInputRef.current = currentInputRef.current + result.text;
+        
         // 如果悬浮输入框是打开的，将文字填入输入框供用户编辑
         if (showFloatingInput) {
-          setFloatingInputValue(prev => prev + result.text);
+          setFloatingInputValue(currentInputRef.current);
           // 聚焦到输入框
           setTimeout(() => floatingInputRef.current?.focus(), 100);
-        } else {
-          // 否则直接发送到终端
-          sendMessage({ type: 'input', data: result.text });
-          xtermRef.current?.write(result.text);
         }
+        
+        // 始终发送到终端（让终端显示）
+        sendMessage({ type: 'input', data: result.text });
       } else {
         xtermRef.current?.writeln(`\x1b[31m识别失败: ${result.error || '未知错误'}\x1b[0m`);
       }
@@ -720,7 +725,8 @@ const Terminal = ({ onActivityChange }) => {
   // 键盘按钮点击 - 显示悬浮输入框
   const handleKbdClick = useCallback((e) => {
     e.stopPropagation();
-    // 保留之前的输入内容，不清空
+    // 打开时从终端同步当前输入内容
+    setFloatingInputValue(currentInputRef.current);
     setShowFloatingInput(true);
     
     requestAnimationFrame(() => {
@@ -737,6 +743,7 @@ const Terminal = ({ onActivityChange }) => {
     
     if (!sendMessage) {
       setFloatingInputValue(newValue);
+      currentInputRef.current = newValue;
       return;
     }
     
@@ -754,6 +761,7 @@ const Terminal = ({ onActivityChange }) => {
     }
     
     setFloatingInputValue(newValue);
+    currentInputRef.current = newValue;
   }, [floatingInputValue, sendMessage]);
 
   // 悬浮输入框 - 发送回车
@@ -761,6 +769,7 @@ const Terminal = ({ onActivityChange }) => {
     if (sendMessage) {
       sendMessage({ type: 'input', data: '\r' });
       setFloatingInputValue('');
+      currentInputRef.current = ''; // 提交后清空输入跟踪
       setShowFloatingInput(false);
     }
   }, [sendMessage]);
