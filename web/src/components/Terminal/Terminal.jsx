@@ -22,7 +22,13 @@ const Terminal = ({ onActivityChange }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  
+
+  // 麦克风拖动状态
+  const [micPosition, setMicPosition] = useState({ x: 16, y: 16 });
+  const [isDraggingMic, setIsDraggingMic] = useState(false);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const terminalRef = useRef(null);
+
   const activityTimeoutRef = useRef(null);
   const lastTapRef = useRef(0); // 双击检测
   
@@ -416,6 +422,7 @@ const Terminal = ({ onActivityChange }) => {
       'enter': '\r',
       'ctrl-c': '\x03',
       'ctrl-t': '\x14',
+      'ctrl-g': '\x07',  // Ctrl+G
       'ctrl-u': '\x15',
       'ctrl-l': '\x0c',
       'up': '\x1b[A',
@@ -574,6 +581,66 @@ const Terminal = ({ onActivityChange }) => {
 
   const toggleFullscreen = () => setIsFullscreen(prev => !prev);
 
+  // ========== 麦克风拖动功能 ==========
+  const handleMicMouseDown = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+    if (!terminalRef.current) return;
+    const terminalRect = terminalRef.current.getBoundingClientRect();
+
+    // 按钮中心坐标（基于 bottom 和 left）
+    const btnCenterX = terminalRect.left + micPosition.x + 24; // 24 = 按钮半径
+    const btnCenterY = terminalRect.bottom - micPosition.y - 24;
+
+    setIsDraggingMic(true);
+    dragOffsetRef.current = {
+      x: clientX - btnCenterX,
+      y: clientY - btnCenterY
+    };
+  }, [micPosition]);
+
+  const handleMicMouseMove = useCallback((e) => {
+    if (!isDraggingMic || !terminalRef.current) return;
+
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+    const terminalRect = terminalRef.current.getBoundingClientRect();
+    let newX = clientX - terminalRect.left - dragOffsetRef.current.x;
+    let newY = terminalRect.bottom - clientY - dragOffsetRef.current.y;
+
+    // 限制在终端范围内
+    newX = Math.max(0, Math.min(newX, terminalRect.width - 48));
+    newY = Math.max(0, Math.min(newY, terminalRect.height - 48));
+
+    setMicPosition({ x: newX, y: newY });
+  }, [isDraggingMic]);
+
+  const handleMicMouseUp = useCallback(() => {
+    setIsDraggingMic(false);
+  }, []);
+
+  // 全局监听拖动事件
+  useEffect(() => {
+    if (isDraggingMic) {
+      window.addEventListener('mousemove', handleMicMouseMove);
+      window.addEventListener('mouseup', handleMicMouseUp);
+      window.addEventListener('touchmove', handleMicMouseMove, { passive: false });
+      window.addEventListener('touchend', handleMicMouseUp);
+
+      return () => {
+        window.removeEventListener('mousemove', handleMicMouseMove);
+        window.removeEventListener('mouseup', handleMicMouseUp);
+        window.removeEventListener('touchmove', handleMicMouseMove);
+        window.removeEventListener('touchend', handleMicMouseUp);
+      };
+    }
+  }, [isDraggingMic, handleMicMouseMove, handleMicMouseUp]);
+
   // 点击终端区域
   const focusTerminal = useCallback(() => {
     // 移动端不在单击时弹出键盘，等待双击
@@ -614,8 +681,9 @@ const Terminal = ({ onActivityChange }) => {
   }, [isMobile]);
 
   return (
-    <div 
-      className={`terminal ${isFullscreen ? 'fullscreen' : ''}`} 
+    <div
+      ref={terminalRef}
+      className={`terminal ${isFullscreen ? 'fullscreen' : ''} ${isDraggingMic ? 'dragging' : ''}`}
       onClick={focusTerminal}
     >
       <div className="terminal-bar">
@@ -632,8 +700,17 @@ const Terminal = ({ onActivityChange }) => {
         </div>
         {/* 语音输入按钮 - 仅登录后显示 */}
         {token && (
-          <button 
+          <button
             className={`voice-btn ${isRecording ? 'recording' : ''} ${isProcessing ? 'processing' : ''}`}
+            style={{
+              left: `${micPosition.x}px`,
+              bottom: `${micPosition.y}px`,
+              right: 'auto',
+              top: 'auto',
+              transform: isDraggingMic ? 'scale(1.1)' : 'scale(1)',
+            }}
+            onMouseDown={handleMicMouseDown}
+            onTouchStart={handleMicMouseDown}
             onClick={(e) => { e.stopPropagation(); toggleRecording(); }}
             title={isRecording ? '停止录音' : '语音输入'}
             disabled={isProcessing}
@@ -736,7 +813,7 @@ const Terminal = ({ onActivityChange }) => {
           <div className="virtual-keys-row">
             <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-c')}>^C</button>
             <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-t')}>^T</button>
-            <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-u')}>^U</button>
+            <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-g')}>^G</button>
             <button className="vk-btn vk-ctrl" onClick={() => sendSpecialKey('ctrl-l')}>^L</button>
           </div>
           <div className="virtual-keys-row">

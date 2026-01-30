@@ -557,8 +557,9 @@
 /* ========== 语音输入按钮 ========== */
 .voice-btn {
   position: absolute;
+  /* 默认在左下方，使用 JS 控制位置 */
+  left: 16px;
   bottom: 16px;
-  right: 16px;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -569,16 +570,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
+  box-shadow:
     0 4px 15px rgba(0, 217, 255, 0.3),
     0 0 20px rgba(0, 217, 255, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 100;
+  /* 禁用触摸高亮 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
 }
 
 .voice-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 
+  box-shadow:
     0 6px 20px rgba(0, 217, 255, 0.4),
     0 0 30px rgba(0, 217, 255, 0.3);
 }
@@ -592,11 +595,19 @@
   cursor: not-allowed;
 }
 
+/* 拖动时样式 */
+.terminal.dragging .voice-btn {
+  cursor: grabbing;
+  box-shadow:
+    0 8px 25px rgba(0, 217, 255, 0.5),
+    0 0 40px rgba(0, 217, 255, 0.4);
+}
+
 /* 录音中状态 */
 .voice-btn.recording {
   background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
   animation: pulse-recording 1.5s ease-in-out infinite;
-  box-shadow: 
+  box-shadow:
     0 4px 15px rgba(239, 68, 68, 0.4),
     0 0 20px rgba(239, 68, 68, 0.3);
 }
@@ -604,13 +615,13 @@
 @keyframes pulse-recording {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 
+    box-shadow:
       0 4px 15px rgba(239, 68, 68, 0.4),
       0 0 20px rgba(239, 68, 68, 0.3);
   }
   50% {
     transform: scale(1.05);
-    box-shadow: 
+    box-shadow:
       0 6px 25px rgba(239, 68, 68, 0.5),
       0 0 40px rgba(239, 68, 68, 0.4);
   }
@@ -619,29 +630,13 @@
 /* 处理中状态 */
 .voice-btn.processing {
   background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
-  box-shadow: 
+  box-shadow:
     0 4px 15px rgba(245, 158, 11, 0.4),
     0 0 20px rgba(245, 158, 11, 0.3);
 }
 
-/* 移动端虚拟按键存在时，语音按钮位置调整 */
-.terminal .voice-btn {
-  bottom: 16px;
-}
-
-/* 当有虚拟按键时，语音按钮移到虚拟按键上方 */
-.terminal:has(.virtual-keys) .voice-btn {
-  bottom: calc(130px + 16px); /* 虚拟按键高度 + 间距 */
-}
-
 /* 全屏模式下的语音按钮 */
 .terminal.fullscreen .voice-btn {
-  bottom: 20px;
-  right: 20px;
   width: 56px;
   height: 56px;
-}
-
-.terminal.fullscreen:has(.virtual-keys) .voice-btn {
-  bottom: calc(140px + max(20px, env(safe-area-inset-bottom)));
 }
