@@ -34,3 +34,6 @@ dist-ssr/
 *.db
 *.sqlite
 *.sqlite3
+
+# Claude Code config
+.claude/
