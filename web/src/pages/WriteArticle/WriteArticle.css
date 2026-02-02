@@ -7,57 +7,30 @@
   min-height: 100vh;
 }
 
-/* Top Bar - 精确匹配设计 */
-.top-bar {
+/* Action Bar - 位于 Navbar 下方 */
+.write-action-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-12);
-  height: var(--nav-height);
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--accent-cyan-20);
+  padding: var(--space-6) var(--padding-nav);
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  gap: var(--gap-xl);
 }
 
-.top-left {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-2xl);
-}
-
-.top-bar .back-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px;
-  height: 36px;
-  border: none;
-  border-radius: 6px;
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-  background: transparent;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  box-sizing: border-box;
-}
-
-.top-bar .back-btn:hover {
-  color: var(--accent-cyan);
-  background: rgba(0, 217, 255, 0.1);
-}
-
-.page-title {
+.write-page-title {
   font-family: var(--font-display);
   font-size: var(--text-2xl);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
+  flex-shrink: 0;
 }
 
-.top-right {
+.write-action-buttons {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: nowrap;
 }
 
 .action-btn {
@@ -113,7 +86,10 @@
   flex: 1;
   display: flex;
   gap: var(--gap-6xl);
-  padding: var(--space-12);
+  padding: var(--space-8) var(--padding-nav);
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -406,7 +382,7 @@
 @media (max-width: 1024px) {
   .write-main {
     flex-direction: column;
-    padding: var(--space-8);
+    padding: var(--space-6);
   }
 
   .right-panel {
@@ -423,17 +399,26 @@
 }
 
 @media (max-width: 768px) {
-  .top-bar {
+  .write-action-bar {
     flex-direction: column;
-    height: auto;
-    padding: var(--space-7) var(--space-8);
-    gap: var(--gap-2xl);
+    align-items: stretch;
+    padding: var(--space-5) var(--space-6);
+    gap: var(--gap-lg);
   }
 
-  .top-left,
-  .top-right {
-    width: 100%;
-    justify-content: space-between;
+  .write-page-title {
+    font-size: var(--text-xl);
+    text-align: center;
+  }
+
+  .write-action-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    padding: 8px 12px;
+    font-size: 12px;
   }
 
   .title-input {

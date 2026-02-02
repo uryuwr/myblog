@@ -4,7 +4,7 @@ import {
   ArrowLeft, Bold, Italic, Code, Link, Image, List, Quote,
   Upload, ChevronDown, Eye, EyeOff, Columns, Copy, Check
 } from 'lucide-react';
-import Navbar from '../../components/Navbar';
+import Navbar from '../../components/Navbar/Navbar';
 import LoginModal from '../../components/LoginModal/LoginModal';
 import UserInfo from '../../components/UserInfo';
 import { useAuth } from '../../contexts/AuthContext';
@@ -276,18 +276,7 @@ export default function WriteArticle() {
   if (!token) {
     return (
       <div className="page-wrapper write-page">
-        <div className="top-bar">
-          <div className="top-left">
-            <button className="back-btn" onClick={() => navigate(-1)}>
-              <ArrowLeft size={18} />
-              返回
-            </button>
-            <h1 className="page-title">
-              {isEditMode ? '✏️ 编辑文章' : '✍️ 写文章'}
-            </h1>
-          </div>
-        </div>
-        
+        <Navbar />
         <main className="write-main">
           <div className="login-required-container">
             <div className="login-required-card">
@@ -313,21 +302,18 @@ export default function WriteArticle() {
 
   return (
     <div className="page-wrapper write-page">
-      {/* Top Bar */}
-      <div className="top-bar">
-        <div className="top-left">
-          <button className="back-btn" onClick={() => navigate(-1)}>
-            <ArrowLeft size={18} />
-            返回
-          </button>
-          <h1 className="page-title">✍️ 写文章</h1>
-        </div>
-        <div className="top-right">
+      <Navbar />
+      {/* Action Bar */}
+      <div className="write-action-bar">
+        <h1 className="write-page-title">
+          {isEditMode ? '编辑文章' : '写文章'}
+        </h1>
+        <div className="write-action-buttons">
           <button className="action-btn draft" onClick={handleSaveDraft} disabled={saving}>
             {saving ? '保存中...' : '存草稿'}
           </button>
-          <button 
-            className={`action-btn preview-toggle ${showPreview ? 'active' : ''}`} 
+          <button
+            className={`action-btn preview-toggle ${showPreview ? 'active' : ''}`}
             onClick={toggleLivePreview}
             title={showPreview ? '关闭实时预览' : '开启实时预览'}
           >
@@ -341,7 +327,6 @@ export default function WriteArticle() {
           <button className="action-btn publish" onClick={handlePublish} disabled={saving}>
             {saving ? '发布中...' : (isEditMode ? '更新文章' : '发布文章')}
           </button>
-          {user && <UserInfo variant="default" />}
         </div>
       </div>
 
