@@ -47,6 +47,7 @@ nano .env.docker
 | `SMTP_PASS` | SMTP 授权码 | QQ邮箱设置中获取 |
 | `JWT_SECRET` | 登录令牌密钥 | 随机字符串 |
 | `ALLOWED_EMAILS` | 白名单邮箱 | 逗号分隔，留空允许所有 |
+| `DEV_MODE` | 前端启动模式 | `false`=生产模式, `true`=开发模式 |
 
 > 💡 如果不配置邮件，验证码会在终端日志中显示（开发模式）
 
@@ -81,12 +82,38 @@ docker compose down
   后端地址: https://xxx.trycloudflare.com
   前端地址: http://localhost:5174
   公网访问: https://xxx.trycloudflare.com
+  启动模式: 生产模式 (访问快)
 ```
 
-#### 4. 仅本地模式（不启用隧道）
+#### 4. 启动模式说明
+
+| 模式 | DEV_MODE | 命令 | 特点 |
+|------|----------|------|------|
+| 生产模式 | `false`（默认） | `npm run build && npm run preview` | ⚡ 访问速度快 |
+| 开发模式 | `true` | `npm run dev` | 🔄 支持热更新 |
+
+```bash
+# 使用开发模式启动
+DEV_MODE=true docker compose up myblog
+```
+
+#### 5. 仅本地模式（不启用隧道）
 
 ```bash
 docker compose --profile local up myblog-local
+```
+
+#### 6. 查看日志
+
+```bash
+# 实时查看所有日志
+docker compose logs -f myblog
+
+# 查看后端日志
+tail -f logs/backend.log
+
+# 查看前端日志
+tail -f logs/frontend.log
 ```
 
 ---
@@ -184,6 +211,23 @@ cloudflared tunnel --url http://localhost:5174
 - **会话持久化**：终端会话支持断线重连
 - **PWA 支持**：可安装为本地应用
 - **移动端适配**：虚拟键盘、触摸屏优化
+- **语音转文字**：支持语音输入（需配置 Whisper 服务）
+
+## 环境变量
+
+### Docker 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `ENABLE_TUNNEL` | `true` | 是否启用 Cloudflare 内网穿透 |
+| `DEV_MODE` | `false` | 前端启动模式（false=生产，true=开发） |
+| `AUTO_START_CLAUDE` | `false` | 是否自动启动 Claude CLI |
+| `SMTP_HOST` | - | SMTP 邮件服务器 |
+| `SMTP_PORT` | - | SMTP 端口 |
+| `SMTP_USER` | - | SMTP 用户名 |
+| `SMTP_PASS` | - | SMTP 授权码 |
+| `JWT_SECRET` | - | JWT 签名密钥 |
+| `ALLOWED_EMAILS` | - | 登录白名单邮箱 |
 
 ## 认证
 
@@ -204,8 +248,33 @@ myblog/
 │   └── public/       # 静态资源 (PWA图标等)
 ├── Dockerfile        # Docker 镜像定义
 ├── docker-compose.yml # Docker Compose 配置
+├── docker-entrypoint.sh # Docker 启动脚本
+├── supervisord.conf  # 进程管理配置
 ├── .env.docker.example # 环境变量模板
 ├── start-public.sh   # Mac/Linux 一键启动脚本
 ├── start-public.bat  # Windows 一键启动脚本
 └── README.md
+```
+
+## 常见问题
+
+### Docker 构建失败（网络问题）
+
+如果构建时下载 cloudflared 失败，配置 Docker 代理：
+
+1. 打开 Docker Desktop → Settings → Resources → Proxies
+2. 填入代理地址（如 `http://127.0.0.1:7890`）
+3. 重新构建：`docker compose build --no-cache`
+
+### QQ 邮箱 SMTP 认证失败
+
+1. 确保已开启 SMTP 服务
+2. 使用**授权码**而非 QQ 密码
+3. 授权码应为 16 位字母
+
+### 页面加载慢
+
+使用生产模式（默认）可大幅提升访问速度：
+```bash
+DEV_MODE=false docker compose up myblog
 ```

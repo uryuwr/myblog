@@ -9,6 +9,15 @@ echo ""
 # 清理旧日志
 rm -f /app/logs/tunnel_*.log
 
+# 确定前端启动模式
+if [ "$DEV_MODE" = "true" ]; then
+    MODE_DESC="开发模式 (热更新)"
+else
+    MODE_DESC="生产模式 (访问快)"
+fi
+echo "  前端启动模式: $MODE_DESC"
+echo ""
+
 # 如果启用隧道模式
 if [ "$ENABLE_TUNNEL" = "true" ]; then
     echo "[1/5] 启动后端服务..."
@@ -87,8 +96,19 @@ if [ "$ENABLE_TUNNEL" = "true" ]; then
     echo "VITE_API_URL=$SERVER_URL/api" > /app/web/.env
 
     cd /app/web
-    npm run dev -- --host 0.0.0.0 &
-    FRONTEND_PID=$!
+    
+    # 根据 DEV_MODE 选择启动方式
+    if [ "$DEV_MODE" = "true" ]; then
+        echo "  使用开发模式启动..."
+        npm run dev -- --host 0.0.0.0 &
+        FRONTEND_PID=$!
+    else
+        echo "  构建生产版本..."
+        npm run build
+        echo "  启动预览服务..."
+        npm run preview -- --host 0.0.0.0 --port 5174 &
+        FRONTEND_PID=$!
+    fi
 
     echo ""
     echo "============================================"
@@ -98,6 +118,7 @@ if [ "$ENABLE_TUNNEL" = "true" ]; then
     echo "  后端地址: $SERVER_URL"
     echo "  前端地址: http://localhost:5174"
     echo "  公网访问: $WEB_URL"
+    echo "  启动模式: $MODE_DESC"
     echo ""
 
     # 生成二维码
@@ -125,5 +146,41 @@ else
         echo "VITE_API_URL=http://localhost:3001/api" > /app/web/.env
     fi
     
-    exec /usr/bin/supervisord -c /etc/supervisord.conf
+    # 根据 DEV_MODE 生成对应的 supervisord 配置
+    if [ "$DEV_MODE" = "true" ]; then
+        # 开发模式
+        exec /usr/bin/supervisord -c /etc/supervisord.conf
+    else
+        # 生产模式：先构建再启动
+        echo "  构建生产版本..."
+        cd /app/web
+        npm run build
+        
+        # 生成生产模式的 supervisord 配置
+        cat > /tmp/supervisord-prod.conf << 'EOF'
+[supervisord]
+nodaemon=true
+logfile=/app/logs/supervisord.log
+pidfile=/var/run/supervisord.pid
+loglevel=info
+
+[program:backend]
+command=node /app/server/index.js
+directory=/app/server
+autostart=true
+autorestart=true
+stdout_logfile=/app/logs/backend.log
+stderr_logfile=/app/logs/backend.err
+environment=NODE_ENV=production
+
+[program:frontend]
+command=npm run preview -- --host 0.0.0.0 --port 5174
+directory=/app/web
+autostart=true
+autorestart=true
+stdout_logfile=/app/logs/frontend.log
+stderr_logfile=/app/logs/frontend.err
+EOF
+        exec /usr/bin/supervisord -c /tmp/supervisord-prod.conf
+    fi
 fi

@@ -55,6 +55,7 @@ ENV NODE_ENV=production
 ENV ENABLE_TUNNEL=true
 ENV SHELL=/bin/bash
 ENV AUTO_START_CLAUDE=false
+ENV DEV_MODE=false
 
 # 启动入口
 ENTRYPOINT ["/docker-entrypoint.sh"]

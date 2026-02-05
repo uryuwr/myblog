@@ -18,6 +18,8 @@ services:
     environment:
       # 非敏感配置可以直接写这里
       - ENABLE_TUNNEL=true
+      # 前端启动模式: false=生产模式(访问快), true=开发模式(热更新)
+      - DEV_MODE=false
     restart: unless-stopped
 
   # 可选：仅本地开发模式（不启用隧道）
@@ -32,6 +34,7 @@ services:
       - ./logs:/app/logs
     environment:
       - ENABLE_TUNNEL=false
+      - DEV_MODE=true
       - VITE_API_URL=http://localhost:3001/api
     restart: unless-stopped
     profiles:
