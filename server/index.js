@@ -239,7 +239,9 @@ function handleMessage(ws, message) {
         // 用户重连后看到的是当前终端状态，新的输出会实时推送
       } else {
         // 创建新会话
-        initializePty(ws, state, true); // true = 自动启动 claude
+        // 根据环境变量决定是否自动启动 claude（Docker 环境下可能没有 claude）
+        const autoStartClaude = process.env.AUTO_START_CLAUDE !== 'false';
+        initializePty(ws, state, autoStartClaude);
       }
     } else {
       ws.send(JSON.stringify({
@@ -312,9 +314,14 @@ function rebindPtyToWebSocket(ws, state, session) {
 function initializePty(ws, state, autoStartClaude = false) {
   const initialCwd = process.cwd();
   
-  // 创建 PTY 进程 - 使用 PowerShell
+  // 根据平台选择 shell
+  const isWindows = process.platform === 'win32';
+  const shell = isWindows ? 'powershell.exe' : (process.env.SHELL || '/bin/sh');
+  const shellArgs = isWindows ? [] : [];
+  
+  // 创建 PTY 进程
   // 默认尺寸设置为较小值，前端连接后会发送实际尺寸
-  const ptyProcess = pty.spawn('powershell.exe', [], {
+  const ptyProcess = pty.spawn(shell, shellArgs, {
     name: 'xterm-256color',
     cols: 80,  // 默认 80 列，适合大部分设备
     rows: 24,  // 默认 24 行
@@ -323,7 +330,7 @@ function initializePty(ws, state, autoStartClaude = false) {
       ...process.env,
       TERM: 'xterm-256color',
       COLORTERM: 'truecolor',
-      POWERSHELL_UPDATECHECK: 'Off'  // 禁用更新检查提示
+      ...(isWindows && { POWERSHELL_UPDATECHECK: 'Off' })  // Windows: 禁用更新检查提示
     }
   });
 
@@ -414,12 +421,21 @@ function initializePty(ws, state, autoStartClaude = false) {
     }
   });
 
-  // 自动启动 Claude
+  // 自动启动 Claude（仅当环境中有 claude 命令时）
   if (autoStartClaude) {
-    // 等待 PowerShell 初始化完成后执行 claude 命令
+    // 等待 shell 初始化完成后执行 claude 命令
     setTimeout(() => {
       ptyProcess.write('claude\r');
     }, 500);
+  } else {
+    // 不自动启动 claude，直接发送就绪信号
+    setTimeout(() => {
+      if (ws.readyState === ws.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'claude_ready'
+        }));
+      }
+    }, 300);
   }
 }
 

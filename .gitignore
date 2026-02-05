@@ -38,6 +38,10 @@ dist-ssr/
 # Claude Code config
 .claude/
 
+# Docker 敏感配置（绝对不要提交！）
+.env.docker
+docker-compose.override.yml
+
 # Windows reserved device names (prevent accidental creation)
 nul
 con

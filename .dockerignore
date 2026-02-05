@@ -1,0 +1,37 @@
+# Git
+.git
+.gitignore
+
+# Node modules (会在容器内安装)
+node_modules
+server/node_modules
+web/node_modules
+
+# 日志文件
+*.log
+logs/
+
+# 环境文件（会在容器内生成）
+.env
+web/.env
+server/.env
+
+# IDE
+.vscode
+.idea
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.temp
+tunnel_*.log
+tunnel_*.err
+
+# Windows 脚本（Docker 中不需要）
+*.bat
+
+# 生成的文件
+url.png

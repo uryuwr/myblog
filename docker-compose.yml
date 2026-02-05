@@ -1,0 +1,38 @@
+services:
+  myblog:
+    build: .
+    container_name: myblog
+    ports:
+      - "3001:3001"   # 后端
+      - "5174:5174"   # 前端
+    volumes:
+      # 持久化数据库
+      - ./server/db:/app/server/db
+      # 持久化日志
+      - ./logs:/app/logs
+    env_file:
+      # 从 .env.docker 读取敏感配置（此文件已在 .gitignore 中，不会被提交）
+      # 如果文件不存在，不会报错
+      - path: .env.docker
+        required: false
+    environment:
+      # 非敏感配置可以直接写这里
+      - ENABLE_TUNNEL=true
+    restart: unless-stopped
+
+  # 可选：仅本地开发模式（不启用隧道）
+  myblog-local:
+    build: .
+    container_name: myblog-local
+    ports:
+      - "3001:3001"
+      - "5174:5174"
+    volumes:
+      - ./server/db:/app/server/db
+      - ./logs:/app/logs
+    environment:
+      - ENABLE_TUNNEL=false
+      - VITE_API_URL=http://localhost:3001/api
+    restart: unless-stopped
+    profiles:
+      - local  # 使用 docker compose --profile local up myblog-local 启动

@@ -18,7 +18,82 @@
 
 ## 快速开始
 
-### 1. 安装依赖
+### 方式一：Docker 部署（推荐）
+
+只需安装 Docker，一键启动前后端 + 内网穿透。
+
+#### 1. 安装 Docker
+
+- **macOS / Windows**：下载 [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- **Linux**：`curl -fsSL https://get.docker.com | sh`
+
+#### 2. 配置环境变量
+
+```bash
+# 复制配置模板
+cp .env.docker.example .env.docker
+
+# 编辑配置（填入你的 SMTP、JWT 等信息）
+nano .env.docker
+```
+
+配置项说明：
+
+| 变量 | 说明 | 示例 |
+|------|------|------|
+| `SMTP_HOST` | 邮件服务器 | `smtp.qq.com` |
+| `SMTP_PORT` | SMTP 端口 | `465` |
+| `SMTP_USER` | 发件邮箱 | `your@qq.com` |
+| `SMTP_PASS` | SMTP 授权码 | QQ邮箱设置中获取 |
+| `JWT_SECRET` | 登录令牌密钥 | 随机字符串 |
+| `ALLOWED_EMAILS` | 白名单邮箱 | 逗号分隔，留空允许所有 |
+
+> 💡 如果不配置邮件，验证码会在终端日志中显示（开发模式）
+
+#### 3. 启动服务
+
+**macOS / Linux：**
+```bash
+./start-public.sh
+```
+
+**或使用 Docker Compose：**
+```bash
+# 启动（带内网穿透）
+docker compose up myblog
+
+# 后台运行
+docker compose up -d myblog
+
+# 查看日志
+docker compose logs -f myblog
+
+# 停止
+docker compose down
+```
+
+启动成功后会显示公网访问地址：
+```
+============================================
+  部署完成！
+============================================
+
+  后端地址: https://xxx.trycloudflare.com
+  前端地址: http://localhost:5174
+  公网访问: https://xxx.trycloudflare.com
+```
+
+#### 4. 仅本地模式（不启用隧道）
+
+```bash
+docker compose --profile local up myblog-local
+```
+
+---
+
+### 方式二：手动部署
+
+#### 1. 安装依赖
 
 ```bash
 # 安装后端依赖
@@ -30,7 +105,14 @@ cd ../web
 npm install
 ```
 
-### 2. 启动服务（优先使用start-public.bat脚本完成自动化部署，如果失败则通过下列方式手动部署）
+#### 2. 配置环境变量（可选）
+
+```bash
+cp server/.env.example server/.env
+# 编辑 server/.env 填入配置
+```
+
+#### 3. 启动服务（优先使用start-public.bat脚本完成自动化部署，如果失败则通过下列方式手动部署）
 
 **终端 1 - 启动后端 (端口 3001)**
 ```bash
@@ -120,5 +202,10 @@ myblog/
 │   │   ├── pages/    # 页面组件
 │   │   └── components/ # 公共组件
 │   └── public/       # 静态资源 (PWA图标等)
+├── Dockerfile        # Docker 镜像定义
+├── docker-compose.yml # Docker Compose 配置
+├── .env.docker.example # 环境变量模板
+├── start-public.sh   # Mac/Linux 一键启动脚本
+├── start-public.bat  # Windows 一键启动脚本
 └── README.md
 ```
